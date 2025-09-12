@@ -1,0 +1,5 @@
+(executable
+        (name marthe)
+        (libraries unix)
+        (promote (until-clean))
+        )

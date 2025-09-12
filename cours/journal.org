@@ -1,0 +1,32 @@
+#+TITLE: Compilation 2024/2025 -- Journal du cours
+#+AUTHOR: Adrien Guatto
+#+EMAIL: guatto@irif.org
+#+LANGUAGE: fr
+#+OPTIONS: ^:nil p:nil
+#+LATEX_CLASS: article
+#+LATEX_CLASS_OPTIONS: [a4paper,11pt]
+#+LATEX_HEADER: \usepackage{a4wide}
+#+LATEX_HEADER: \usepackage{microtype}
+#+LATEX_HEADER: \hypersetup{hidelinks}
+#+LATEX_HEADER: \usepackage[french]{babel}
+# (org-latex-export-to-pdf)
+
+* Cours 01 <2025-09-12>
+** Présentation
+   Voir les transparents dans
+   [[file:cours-introduction.pdf][cours-introduction.pdf]].
+** Introduction à la compilation : le micro-langage Marthe
+   Le reste de la séance est consacré à la lecture et discussion d'un
+   micro-langage de programmation, Marthe. Voir le fichier
+   [[file:cours-01/marthe.ml][marthe.ml]].
+
+   On s'arrête juste avant la compilation vers la machine abstraite.
+** À préparer pour le prochain TP et le prochain cours
+*** TODO Prochaine séance de travaux pratiques
+    - Recommandé : venir avec son ordinateur portable, lundi
+    - S'assurer que votre environnement de travail dispose d'un environnement de
+      développement OCaml fonctionnel (compilateur OCaml, OPAM, dune).
+*** TODO S'inscrire sur la liste de diffusion du cours
+    https://listes.u-paris.fr/wws/info/m1.2025.compilation.info
+*** TODO Prochaine séance de cours
+    - Implémenter la gestion des commentaires dans ~marthe.ml~.
