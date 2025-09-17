@@ -18,7 +18,7 @@ Le code du compilateur à compléter sera disponible dans le dossier
 
 La communication avec l'équipe enseignante en dehors des heures de cours et de
 travaux pratiques passe par la liste de diffusion
-[m1.2024.compilation.info@listes.u-paris.fr](https://listes.u-paris.fr/wws/info/m1.2024.compilation.info). Vous
+[m1.2025.compilation.info@listes.u-paris.fr](https://listes.u-paris.fr/wws/info/m1.2025.compilation.info). Vous
 devez vous y inscrire.
 
 ## Paramétrage

@@ -30,3 +30,10 @@
     https://listes.u-paris.fr/wws/info/m1.2025.compilation.info
 *** TODO Prochaine séance de cours
     - Implémenter la gestion des commentaires dans ~marthe.ml~.
+* Cours 02 <2025-09-17>
+** Contenu de la séance
+   On discute de la partie compilation dans le reste du fichier ~marthe.ml~.
+
+   On découvre [[file:cours-flap.pdf][le compilateur flap]].
+** Prochain TP
+   Pensez à amener votre ordinateur portable.
