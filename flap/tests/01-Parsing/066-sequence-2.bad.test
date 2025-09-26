@@ -1,0 +1,8 @@
+{
+    "source": "066-sequence-2.bad.hopix",
+    "arguments" : ["-s", "hopix", "--verbose", "true", "--dry", "true",
+                   "--unsafe", "true", "--loc", "true"],
+    "exitcode": 1,
+    "expectation": ["Regex", "Error \\(parsing\\)\n *Syntax error.$"],
+    "tags": ["parsing", "bad"]
+}

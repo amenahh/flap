@@ -1,0 +1,2 @@
+let polybox =
+  match (x) { { box = y }<int> -> y }

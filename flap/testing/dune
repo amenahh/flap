@@ -1,0 +1,9 @@
+(executable
+  (public_name flaptest)
+  (name flaptest)
+  (package flap)
+  (libraries unix domainslib pure-html yojson re pprint patdiff patience_diff)
+  (preprocess (pps ppx_yojson_conv))
+  (promote (until-clean)))
+
+(env (dev (flags (:standard -w -23))))

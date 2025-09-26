@@ -1,0 +1,3 @@
+(install
+  (section (site (flap runtime)))
+  (files (glob_files "*.c")))

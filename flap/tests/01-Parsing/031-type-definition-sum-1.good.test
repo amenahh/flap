@@ -1,0 +1,8 @@
+{
+    "source": "031-type-definition-sum-1.good.hopix",
+    "arguments" : ["-s", "hopix", "--verbose", "true", "--dry", "true",
+                   "--unsafe", "true", "--loc", "true"],
+    "exitcode": 0,
+    "expectation": ["Expect", {}],
+    "tags": ["parsing", "good"]
+}

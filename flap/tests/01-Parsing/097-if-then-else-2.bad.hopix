@@ -1,0 +1,5 @@
+let main =
+  if (failure 0) then {
+    print error_message
+  } else {
+  }

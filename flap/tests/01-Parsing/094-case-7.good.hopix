@@ -1,0 +1,4 @@
+let mono =
+  match (p) {
+  | (x, y) -> x + y
+  }

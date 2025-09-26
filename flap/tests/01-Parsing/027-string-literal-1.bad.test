@@ -1,0 +1,8 @@
+{
+    "source": "027-string-literal-1.bad.hopix",
+    "arguments" : ["-s", "hopix", "--verbose", "true", "--dry", "true",
+                   "--unsafe", "true", "--loc", "true"],
+    "exitcode": 1,
+    "expectation": ["Regex", "Error \\(lexing\\)\n *Unterminated string.$"],
+    "tags": ["parsing", "bad"]
+}

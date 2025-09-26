@@ -1,0 +1,8 @@
+{
+    "source": "063-record-projection-3.good.hopix",
+    "arguments" : ["-s", "hopix", "--verbose", "true", "--dry", "true",
+                   "--unsafe", "true", "--loc", "true"],
+    "exitcode": 0,
+    "expectation": ["Expect", {}],
+    "tags": ["parsing", "good"]
+}

@@ -1,0 +1,8 @@
+{
+    "source": "087-infix-application-4.bad.hopix",
+    "arguments" : ["-s", "hopix", "--verbose", "true", "--dry", "true",
+                   "--unsafe", "true", "--loc", "true"],
+    "exitcode": 1,
+    "expectation": ["Regex", "Error \\(parsing\\)\n *Syntax error.$"],
+    "tags": ["parsing", "bad"]
+}

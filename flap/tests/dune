@@ -1,0 +1,14 @@
+(rule
+ (alias runtest)
+ (deps
+   (package flap)
+   (glob_files_rec *.{test,expected})
+   (glob_files 01-Parsing/*.hopix)
+   (glob_files 02-Interpreter/*.hopix)
+   (glob_files 03-Typing/*.hopix)
+   (glob_files 04-Hobix_to_Fopix/*.hobix)
+   (glob_files 05-Fopix_to_Retrolix/*.fopix)
+   (glob_files 06-Retrolix_to_x86-64/*.retrolix)
+   )
+ (action (run %{bin:flaptest} -cfg-command %{bin:flap} %{project_root}/tests
+              --only ko)))

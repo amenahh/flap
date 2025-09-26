@@ -1,0 +1,8 @@
+{
+    "source": "012-lexer-label-id-1.bad.hopix",
+    "arguments" : ["-s", "hopix", "--verbose", "true", "--dry", "true",
+                   "--unsafe", "true", "--loc", "true"],
+    "exitcode": 1,
+    "expectation": ["Regex", "Error \\(parsing\\)\n *Syntax error.$"],
+    "tags": ["parsing", "bad"]
+}

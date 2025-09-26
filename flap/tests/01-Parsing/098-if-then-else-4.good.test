@@ -1,0 +1,8 @@
+{
+    "source": "098-if-then-else-4.good.hopix",
+    "arguments" : ["-s", "hopix", "--verbose", "true", "--dry", "true",
+                   "--unsafe", "true", "--loc", "true"],
+    "exitcode": 0,
+    "expectation": ["Expect", {}],
+    "tags": ["parsing", "good"]
+}

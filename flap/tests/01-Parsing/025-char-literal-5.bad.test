@@ -1,0 +1,8 @@
+{
+    "source": "025-char-literal-5.bad.hopix",
+    "arguments" : ["-s", "hopix", "--verbose", "true", "--dry", "true",
+                   "--unsafe", "true", "--loc", "true"],
+    "exitcode": 1,
+    "expectation": ["Regex", "Error \\(lexing\\)\n *unexpected character.$"],
+    "tags": ["parsing", "bad"]
+}

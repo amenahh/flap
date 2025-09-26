@@ -37,3 +37,10 @@
    On découvre [[file:cours-flap.pdf][le compilateur flap]].
 ** Prochain TP
    Pensez à amener votre ordinateur portable.
+* Cours 03 <2025-09-26>
+** Cours
+   On discute de l'analyse lexicale et syntaxique.
+
+   Voir les [[file:cours-parsing.pdf][diapos]].
+** Projet
+   Le jalon 1 est publié.
