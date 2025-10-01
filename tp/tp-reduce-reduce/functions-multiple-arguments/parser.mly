@@ -17,6 +17,14 @@ open AST
 
 %%
 
+(* This grammar has reduce/reduce conflicts: resolve them.
+
+Note that:
+ - "f a1 a2 a3 a4" should give: App(Var "f", [Var "a1"; Var "a2"; Var "a3"; Var "a4"])
+ - but "(f a1 a2) a3 a4" should give: App(App(Var "f", [Var "a1"; Var "a2"]), [Var "a3"; Var "a4"])
+
+*)
+
 phrase:
   e=expression EOF { e }
 
