@@ -13,7 +13,7 @@
 
 }
 
-let lineComment = "##" [^'\n']* '\n'
+let lineComment = "##" [^'\n']*
 let openComment = "{*"
 let closeComment = "*}"
 
