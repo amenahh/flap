@@ -11,10 +11,9 @@
   let error lexbuf =
     error "lexing" (lex_join lexbuf.lex_start_p lexbuf.lex_curr_p)
 
-  
-
-
 }
+
+let lineComment = "##" [^'\n']* '\n'
 let openComment = "{*"
 let closeComment = "*}"
 
@@ -30,6 +29,7 @@ rule token = parse
   | newline         { next_line_and token lexbuf }
   | blank+          { token lexbuf               }
   | openComment     { comment 1 lexbuf           }
+  | lineComment     { token lexbuf               }
   | eof             { EOF       }
 
   (** Lexing error. *)
