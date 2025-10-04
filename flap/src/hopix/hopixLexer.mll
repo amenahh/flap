@@ -41,4 +41,5 @@ and comment cpt  = parse
     else (comment (cpt-1) lexbuf)
     }
   | openComment  { comment (cpt+1) lexbuf }
+  | eof          { error lexbuf "comment not closed."}
   | _            { comment cpt lexbuf     }
