@@ -107,7 +107,7 @@ rule token = parse
       Printf.sprintf
         "The ASCII character %d is not printable." (Char.code c)
     );
-  LCHAR c
+  ATOM c
   }
   | entier as e { ENTIER(e) }
 
