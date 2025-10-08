@@ -35,10 +35,21 @@ let constr_id = majuscule identificateur (*c ft*)
 
 let entier = '-'? digit+ | "0x" ['0'-'9' |'a'-'f''A'-'F']+ |  "0b" ['0'-'1']+ | "0o" ['0'-'7']+ (*c ft *)
 
+let printable = [-~]
+let atom = 
+
 
 
 rule token = parse
   (** Layout *)
+  | newline         { next_line_and token lexbuf }
+  | blank+          { token lexbuf               }
+  | eof             { EOF       }
+
+  (* Comment *)
+  | openComment     { comment 1 lexbuf           }
+  | lineComment     { token lexbuf               }
+
   (* mot clés *)
   | "if" { IF }
   | "while" { WHILE }
@@ -86,15 +97,30 @@ rule token = parse
   | "&&" { AND }
   | "?"  { INTEROGATION }
   | "_"  { BHORIZONTALE }
+
+
+  (* Litterals *)
+
+  | '\'' ([^ '\\' '\''] as c) '\''        {
+  if (Char.code c < 32) then
+    error lexbuf (
+      Printf.sprintf
+        "The ASCII character %d is not printable." (Char.code c)
+    );
+  LCHAR c
+  }
+  | entier as e { ENTIER(e) }
+
+
   | identificateur ad ident { IDENTIFICATEUR(ident) }
   | variable as v { VARIABLE(v) }
   | constr_id as c { CONST_ID(c) }
-  | entier as e { ENTIER(e) }
-  | newline         { next_line_and token lexbuf }
-  | blank+          { token lexbuf               }
-  | openComment     { comment 1 lexbuf           }
-  | lineComment     { token lexbuf               }
-  | eof             { EOF       }
+
+
+
+
+
+  ()
 
   (** Lexing error. *)
   | _               { error lexbuf "unexpected character." }
