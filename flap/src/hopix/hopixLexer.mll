@@ -92,6 +92,7 @@ rule token = parse
   | ">"  { RCHEVRON }
   | ":"  { DPOINTS }
   | "|"  { BVERTICALE }
+  | "->" { RARROW }
   
   | "!"  { EXCLAMATION }
   | "&&" { AND }
