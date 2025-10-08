@@ -15,6 +15,7 @@
 %token <string> CONST_ID
 %token <string> IDENTIFICATEUR
 %token <string> ENTIER
+%token <string> ATOM 
 
 %start<HopixAST.t> program
 
