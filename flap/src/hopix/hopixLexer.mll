@@ -33,10 +33,8 @@ let variable = '`' identificateur (* c ft *)
 
 let constr_id = majuscule identificateur (*c ft*)
 
-let entier = '-'? digit+ | "0x" ['0'-'9' |'a'-'f''A'-'F']+ |  "0b" ['0'-'1']+ | "0o" ['0'-'7']+ (*c ft *)
+let entier = '-'? digit+ | "0x" ['0'-'9' | 'a'-'f''A'-'F']+ |  "0b" ['0'-'1']+ | "0o" ['0'-'7']+ (*c ft *)
 
-let printable = [-~]
-let atom = 
 
 
 
