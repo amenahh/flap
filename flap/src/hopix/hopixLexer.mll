@@ -33,7 +33,7 @@ let variable = '`' identificateur (* c ft *)
 
 let constr_id = majuscule identificateur (*c ft*)
 
-let entier = '-'? digit+ | "0x" ['0'-'9' | 'a'-'f''A'-'F']+ |  "0b" ['0'-'1']+ | "0o" ['0'-'7']+ (*c ft *)
+let entier = '-'? (*digit+ | "0x" ['0'-'9' | 'a'-'f''A'-'F']+ |  "0b" ['0'-'1']+ | "0o" ['0'-'7']+ (*c ft *)*)
 
 
 
@@ -111,15 +111,11 @@ rule token = parse
   | entier as e { ENTIER(e) }
 
 
-  | identificateur ad ident { IDENTIFICATEUR(ident) }
+  | identificateur as ident { IDENTIFICATEUR(ident) }
   | variable as v { VARIABLE(v) }
   | constr_id as c { CONST_ID(c) }
 
 
-
-
-
-  ()
 
   (** Lexing error. *)
   | _               { error lexbuf "unexpected character." }
