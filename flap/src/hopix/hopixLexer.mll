@@ -12,7 +12,7 @@
     error "lexing" (lex_join lexbuf.lex_start_p lexbuf.lex_curr_p)
   
   let string_buffer =
-    Buffer.create 13
+    Buffer.create 10
 
 }
 
@@ -40,8 +40,14 @@ let hexa = ['0'-'9' 'a'-'f''A'-'F']
 
 let entier = '-'? digit+ | "0x" hexa+ |  "0b" ['0'-'1']+ | "0o" ['0'-'7']+ (*c ft *)
 
-let atom = ['\000'-'\255'] | "Ox" hexa hexa | '\\' | '\'' | '\n' | '\t' | '\b' | '\r' 
-let string = '"' (atom|"'"| '\"')* '"'
+let ascii = ['\000'-'\255']
+
+let simpleatom = '\\' | '\'' | '\n' | '\t' | '\b' | '\r' 
+
+let atom =  ascii | "Ox" hexa hexa | simpleatom
+
+(*let string = '"' (atom|"'"| '\"')* '"' Obliger de faire une nouvelle regle pour ne pas capturer un '"' dans le string *)
+
 
 rule token = parse
   (** Layout *)
@@ -108,16 +114,11 @@ rule token = parse
   (* Litterals *)
 
 
-  (*
-  | '\'' ([^ '\\' '\''] as c) '\''{
-  if (Char.code c < 32) then
-    error lexbuf (
-      Printf.sprintf
-        "The ASCII character %d is not printable." (Char.code c)
-    );
-  ATOM c
-  }*)
-  | entier as e { ENTIER(e) }
+
+  | entier as e             { ENTIER(e)                          }
+  | "'" (atom as a ) "'"    { let c = char_of_int(int_of_string a) in if (Char.code c) > 32 then CHAR(c)
+                              else error lexbuf "Non printable char"
+                            }
 
 
   | identificateur as ident { IDENTIFICATEUR(ident) }
@@ -138,7 +139,12 @@ and comment cpt  = parse
   | _            { comment cpt lexbuf     }
 
 and string = parse 
-  | atom as a { Buffer.add_string string_buffer a; string lexbuf}
+  | atom as a { 
+    let c = char_of_int(int_of_string a) in 
+    if (Char.code c) > 32 then (Buffer.add_char string_buffer (c); string lexbuf) (*Petite verif pour être sur que le char est affichable *)
+    else error lexbuf "Non printable char"
+    
+    }
   | '\''  { Buffer.add_char string_buffer '\''; string lexbuf}
   | "\""  { Buffer.add_char string_buffer '\"'; string lexbuf} 
   | '"'   { let s = Buffer.contents string_buffer in

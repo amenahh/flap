@@ -16,7 +16,7 @@
 %token <string> IDENTIFICATEUR
 %token <string> ENTIER
 %token <string> STRING
-//%token <char> ATOM 
+%token <char> CHAR 
 
 %start<HopixAST.t> program
 %%
