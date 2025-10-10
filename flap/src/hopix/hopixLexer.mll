@@ -10,6 +10,9 @@
 
   let error lexbuf =
     error "lexing" (lex_join lexbuf.lex_start_p lexbuf.lex_curr_p)
+  
+  let string_buffer =
+    Buffer.create 13
 
 }
 
@@ -49,6 +52,8 @@ rule token = parse
   (* Comment *)
   | openComment     { comment 1 lexbuf           }
   | lineComment     { token lexbuf               }
+  (* String *)
+  | '"'             { string lexbuf              }
 
   (* mot clés *)
   | "if" { IF }
@@ -103,7 +108,7 @@ rule token = parse
   (* Litterals *)
 
 
-
+  (*
   | '\'' ([^ '\\' '\''] as c) '\''{
   if (Char.code c < 32) then
     error lexbuf (
@@ -111,14 +116,13 @@ rule token = parse
         "The ASCII character %d is not printable." (Char.code c)
     );
   ATOM c
-  }
+  }*)
   | entier as e { ENTIER(e) }
 
 
   | identificateur as ident { IDENTIFICATEUR(ident) }
   | variable as v { VARIABLE(v) }
   | constr_id as c { CONST_ID(c) }
-
 
 
   (** Lexing error. *)
@@ -132,3 +136,12 @@ and comment cpt  = parse
   | openComment  { comment (cpt+1) lexbuf }
   | eof          { error lexbuf "comment not closed."}
   | _            { comment cpt lexbuf     }
+
+and string = parse 
+  | atom as a { Buffer.add_string string_buffer a; string lexbuf}
+  | '\''  { Buffer.add_char string_buffer '\''; string lexbuf}
+  | "\""  { Buffer.add_char string_buffer '\"'; string lexbuf} 
+  | '"'   { let s = Buffer.contents string_buffer in
+            Buffer.clear string_buffer;
+            STRING s}
+  | eof   { error lexbuf "string is not closed."}
