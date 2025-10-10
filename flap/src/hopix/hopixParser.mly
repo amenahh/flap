@@ -8,7 +8,7 @@
 
 
 %token EOF IF WHILE LET FUN TYPE EXTERN AND MATCH THEN ELSE DO UNTIL FOR FROM TO
-%token LPAR RPAR LCROCHET RCROCHET COMMA RARROW
+%token LPAR RPAR LCROCHET RCROCHET COMMA RARROW DIS
 %token EQUAL LCHEVRON RCHEVRON DPOINTS BVERTICALE MOINS EXCLAMATION PLUS REF 
 %token INTEROGATION BHORIZONTALE DIV STAR LT GT DRARROW EQ OR LTE
 %token <string> VARIABLE
@@ -25,8 +25,6 @@ program: EOF
   [] 
 
 }
-
-
 
 
 htype : 
@@ -65,6 +63,92 @@ typelist :
 |t=htype{
     [located t]
 }
+
+
+
+typeScheme :
+| LCROCHET l=typelist RCROCHET t=htype {
+  ForallTy(l,located t)
+} 
+| t=htype {
+  ForallTy(located t,[])
+}
+
+
+
+labelPatternList :
+| id = IDENTIFICATEUR EQUAL p = pattern {
+  [located id, located p]
+}
+
+| id = IDENTIFICATEUR EQUAL p = pattern COMMA l=labelPatternList {
+  (located id , located p) :: l
+}
+
+
+listPattern :
+| p=pattern {
+  [p]
+}
+| p=pattern COMMA l=listPattern{
+  (located p) :: (located l)
+}
+
+pattern :
+| i = IDENTIFICATEUR {
+  PVariable(located i)
+}
+| b = BHORIZONTALE {
+  PWildcard()
+}
+| i = ENTIER {
+  PLiteral(located LInt(i))
+}
+
+| LPAR RPAR {PTuple([])}
+
+| LPAR p=listPattern RPAR {
+  PTuple(located p)
+}
+
+| p=pattern DPOINTS t = htype{
+  PTypeAnnotation(located p,located t)
+}
+
+| p=pattern BVERTICALE pp=pattern {
+  POr((located p) ::[located pp])
+}
+| p = pattern DIS pp=pattern {
+  PAnd((located p)::[located pp])
+}
+
+| LPAR l = labelPatternList RPAR {
+  PRecord(l,p)
+}
+
+| LPAR l = labelPatternList RPAR LCHEVRON t=typelist RCHEVRON {
+  PRecord( l,p)
+}
+
+
+| c = CONST_ID LCHEVRON t=typelist RCHEVRON LPAR l = listPattern RPAR {
+  PTaggedValue(located c, t,l)
+}
+
+| c = CONST_ID {
+  PTaggedValue(located c, [],[])
+}
+
+| c = CONST_ID  LPAR l = listPattern RPAR {
+  PTaggedValue(located c, [],l)
+}
+
+| c = CONST_ID LCHEVRON t=typelist RCHEVRON  {
+  PTaggedValue(located c, t,[])
+}
+
+//TODO char
+//RODOString
 
 
 %inline located(X): x=X {

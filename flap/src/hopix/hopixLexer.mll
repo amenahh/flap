@@ -93,6 +93,7 @@ rule token = parse
   | ":"  { DPOINTS }
   | "|"  { BVERTICALE }
   | "->" { RARROW }
+  | "&"  { DIS }
   
   | "!"  { EXCLAMATION }
   | "&&" { AND }
