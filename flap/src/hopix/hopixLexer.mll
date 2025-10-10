@@ -33,10 +33,12 @@ let variable = '`' identificateur (* c ft *)
 
 let constr_id = majuscule identificateur (*c ft*)
 
-let entier = '-'? (*digit+ | "0x" ['0'-'9' | 'a'-'f''A'-'F']+ |  "0b" ['0'-'1']+ | "0o" ['0'-'7']+ (*c ft *)*)
+let hexa = ['0'-'9' 'a'-'f''A'-'F']
 
+let entier = '-'? digit+ | "0x" hexa+ |  "0b" ['0'-'1']+ | "0o" ['0'-'7']+ (*c ft *)
 
-
+let atom = ['\000'-'\255'] | "Ox" hexa hexa | '\\' | '\'' | '\n' | '\t' | '\b' | '\r' 
+let string = '"' (atom|"'"| '\"')* '"'
 
 rule token = parse
   (** Layout *)
@@ -56,7 +58,7 @@ rule token = parse
   | "type" { TYPE }
   | "extern" { EXTERN }
   | "and" { AND }
-  | "match" { MATCH }
+  | "match" { MATCH } 
   | "then" { THEN }
   | "else" { ELSE }
   | "do" { DO }
@@ -100,7 +102,9 @@ rule token = parse
 
   (* Litterals *)
 
-  | '\'' ([^ '\\' '\''] as c) '\''        {
+
+
+  | '\'' ([^ '\\' '\''] as c) '\''{
   if (Char.code c < 32) then
     error lexbuf (
       Printf.sprintf
