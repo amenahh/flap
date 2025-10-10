@@ -21,15 +21,20 @@
 %%
 
 program: EOF
-{  [] }
+{  
+  [] 
 
-  
+}
+
+
+
+
 htype : 
 |type_con=IDENTIFICATEUR t=htype {
-  Tycon (type_con,[located t])
+  Tycon (TCon type_con,[located t])
 }
 |type_con=IDENTIFICATEUR LCHEVRON t=htype COMMA tl=typelist RCHEVRON {
-  Tycon (type_con,(located t)::tl)
+  Tycon (TCon type_con,(located t)::tl)
 }
 | t1=htype RARROW t2=htype {
   TyArrow (located t1,located t2)
@@ -41,7 +46,7 @@ htype :
   TyTuple(t1,tu)
 }
 | tv = VARIABLE {
-  TyVar tv
+  TyVar (TId tv)
 }
 
 
