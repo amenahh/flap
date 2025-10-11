@@ -79,31 +79,40 @@ typeScheme :
 
 labelPatternList :
 | id = IDENTIFICATEUR EQUAL p = pattern {
-  [located id, located p]
+  [located (LId id), located p]
 }
 
 | id = IDENTIFICATEUR EQUAL p = pattern COMMA l=labelPatternList {
-  (located id , located p) :: l
+  (located (LId id) , located p) :: l
 }
 
 
 listPattern :
 | p=pattern {
-  [p]
+  [located p]
 }
-| p=pattern COMMA l=listPattern{
+| p=pattern COMMA l = listPattern {
   (located p) :: (located l)
 }
 
 pattern :
 | i = IDENTIFICATEUR {
-  PVariable(located i)
+  PVariable(located Id(i))
 }
 | b = BHORIZONTALE {
   PWildcard()
 }
 | i = ENTIER {
   PLiteral(located LInt(i))
+  (* jsp si c located dedans ou dehors*)
+}
+
+| s = STRING {
+  PLiteral(located LString(s))
+}
+
+| c = CHAR {
+  PLiteral(located LChar(c))
 }
 
 | LPAR RPAR {PTuple([])}
@@ -124,28 +133,28 @@ pattern :
 }
 
 | LPAR l = labelPatternList RPAR {
-  PRecord(l,p)
+  PRecord(l,None)
 }
 
 | LPAR l = labelPatternList RPAR LCHEVRON t=typelist RCHEVRON {
-  PRecord( l,p)
+  PRecord( l,Some t)
 }
 
 
 | c = CONST_ID LCHEVRON t=typelist RCHEVRON LPAR l = listPattern RPAR {
-  PTaggedValue(located c, t,l)
+  PTaggedValue(located (KId c), Some t,l)
 }
 
 | c = CONST_ID {
-  PTaggedValue(located c, [],[])
+  PTaggedValue(located (KId c),None,[])
 }
 
 | c = CONST_ID  LPAR l = listPattern RPAR {
-  PTaggedValue(located c, [],l)
+  PTaggedValue(located (KId c), None,l)
 }
 
 | c = CONST_ID LCHEVRON t=typelist RCHEVRON  {
-  PTaggedValue(located c, t,[])
+  PTaggedValue(located (KId c), Some t,[])
 }
 
 //TODO char
