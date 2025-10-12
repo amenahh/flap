@@ -80,8 +80,10 @@ rule token = parse
   | "ref" { REF }
   
   (* ponctuation *)
-  | "{"  { LPAR }
-  | "}"  { RPAR }
+  | "("  { LPAR }
+  | ")"  { RPAR }
+  | "{"  { LACC }
+  | "}"  { RACC }
   | "["  { LCROCHET }
   |  "]" { RCROCHET }
   | ","  { COMMA }
