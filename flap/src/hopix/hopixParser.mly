@@ -8,7 +8,7 @@
 
 
 %token EOF IF WHILE LET FUN TYPE EXTERN AND MATCH THEN ELSE DO UNTIL FOR FROM TO
-%token LPAR RPAR LCROCHET RCROCHET COMMA RARROW DIS
+%token LPAR RPAR LCROCHET RCROCHET COMMA RARROW DIS LACC RACC
 %token EQUAL LCHEVRON RCHEVRON DPOINTS BVERTICALE MOINS EXCLAMATION PLUS REF 
 %token INTEROGATION BHORIZONTALE DIV STAR LT GT DRARROW EQ OR LTE
 %token <string> VARIABLE
@@ -21,28 +21,130 @@
 %start<HopixAST.t> program
 %%
 
-program: EOF
+program: ds = definition* EOF
 {  
-  [] 
+   []
 
 }
 
+definition:
+(* type type_con [ < type_variable { , type_variable } > ] [ = tdefinition ] *)
+| TYPE type_con=located(IDENTIFICATEUR) {
+  DefineType (Position.map (fun v -> TCon v) type_con,[],Abstract)
+} 
+| TYPE type_con=located(IDENTIFICATEUR) EQUAL t=tdefinition {
+    DefineType (Position.map (fun v -> TCon v) type_con,[],t)
+}
+| TYPE type_con=located(IDENTIFICATEUR) LCHEVRON tv = located(VARIABLE) RCHEVRON {
+  DefineType (Position.map (fun v -> TCon v) type_con,[Position.map (fun v -> TId v) tv],Abstract) 
+}
+| TYPE type_con= located(IDENTIFICATEUR) LCHEVRON tvl = typevarlist  RCHEVRON EQUAL t=tdefinition{
+  DefineType (Position.map (fun v -> TCon v) type_con,tvl,t)
+}
+| TYPE type_con=located(IDENTIFICATEUR) LCHEVRON tvl = typevarlist RCHEVRON {
+  DefineType (Position.map (fun v -> TCon v) type_con,tvl,Abstract)
+}
+(*extern var_id : type_scheme*)
+| EXTERN var_id =located(IDENTIFICATEUR) ts = located(typeScheme) {
+  DeclareExtern(Position.map (fun v -> Id v) var_id,ts)
+}
+
+| vd = vdefinition {
+  DefineValue vd
+}
+
+tdefinition:
+| BVERTICALE? constr_id = located(CONST_ID) {
+  DefineSumType [(Position.map (fun v -> KId v) constr_id,[])]
+}
+| BVERTICALE? constr_id = located(CONST_ID) LPAR tl=typelist RPAR {
+  DefineSumType [(Position.map (fun v -> KId v) constr_id,tl)]
+}
+| BVERTICALE? constr_id = located(CONST_ID) LPAR tl=typelist RPAR td = tdefinitioniter {
+  DefineSumType ((Position.map (fun v -> KId v) constr_id,tl)::td)
+}
+| BVERTICALE? constr_id = located(CONST_ID) td = tdefinitioniter {
+  DefineSumType ((Position.map (fun v -> KId v) constr_id,[])::td)
+}
+| LACC label_id=located(IDENTIFICATEUR) DPOINTS t = located(htype)  RACC{
+  DefineRecordType [(Position.map (fun v -> LId v) label_id,t)]
+}
+| LACC label_id=located(IDENTIFICATEUR) DPOINTS t = located(htype) COMMA tl= tylablist RACC{
+  DefineRecordType ((Position.map (fun v -> LId v) label_id,t)::tl)
+}
+
+tylablist:
+|  label_id=located(IDENTIFICATEUR) DPOINTS t = located(htype) {
+  [(Position.map (fun v -> LId v) label_id,t)]
+}
+| label_id=located(IDENTIFICATEUR) DPOINTS t = located(htype) COMMA tl= tylablist{
+  (Position.map (fun v -> LId v) label_id, t)::tl
+}
+
+
+
+(*J'ai fais ca car si la liste de tdef a un element le | est optionnel mais c'est pas le cas pour les tdef suivants*)
+tdefinitioniter:
+| BVERTICALE constr_id = located(CONST_ID) {
+  [(Position.map (fun v -> KId v) constr_id,[])]
+}
+| BVERTICALE constr_id = located(CONST_ID) LPAR tl=typelist RPAR {
+  [(Position.map (fun v -> KId v) constr_id,tl)]
+}
+| BVERTICALE constr_id = located(CONST_ID) LPAR tl=typelist RPAR td = tdefinitioniter {
+  (Position.map (fun v -> KId v) constr_id,tl)::td
+}
+| BVERTICALE constr_id = located(CONST_ID) td = tdefinitioniter {
+  (Position.map (fun v -> KId v) constr_id,[])::td
+}
+
+
+vdefinition:
+| LET var_id=located(IDENTIFICATEUR) EQUAL exp=located(expr) {
+  SimpleValue (Position.map (fun v -> Id v) var_id,None,exp)
+}
+
+| LET var_id=located(IDENTIFICATEUR) DPOINTS ts = located(typeScheme) EQUAL exp=located(expr){
+  SimpleValue (Position.map (fun v -> Id v) var_id,Some ts,exp)
+}
+
+(* 
+| FUN fd = fundef {
+  RecFunctions [(located ,)]
+}
+
+| FUN fd = fundef lf = listfun {
+  RecFunctions (fd) 
+}
+
+listfun: 
+| AND fd {
+
+}
+| AND fd lf = listfun {
+
+}
+*)
+expr:
+|c=located(CHAR) {
+  Literal   (Position.map (fun v -> LChar v) c )
+}
 
 htype : 
-|type_con=IDENTIFICATEUR t=htype {
-  Tycon (TCon type_con,[located t])
+|type_con=IDENTIFICATEUR {
+  TyCon (TCon type_con,[])
 }
-|type_con=IDENTIFICATEUR LCHEVRON t=htype COMMA tl=typelist RCHEVRON {
-  Tycon (TCon type_con,(located t)::tl)
+|type_con=IDENTIFICATEUR LCHEVRON tl=typelist RCHEVRON {
+  TyCon (TCon type_con,tl)
 }
-| t1=htype RARROW t2=htype {
-  TyArrow (located t1,located t2)
+| t1=located(htype) RARROW t2=located(htype) {
+  TyArrow (t1,t2)
 }
 | LPAR t=htype RPAR {
   t
 }
-| t1=htype STAR tu = typeUplet{
-  TyTuple(t1,tu)
+| t1=located(htype) STAR tu = typeUplet{
+  TyTuple (t1::tu)
 }
 | tv = VARIABLE {
   TyVar (TId tv)
@@ -50,77 +152,85 @@ htype :
 
 
 typeUplet : 
-| t=htype STAR tu= typeUplet {
-  (located t):: located tu
+| t=located(htype) STAR tu= typeUplet {
+  (t):: tu
 }
-| t=htype{
-  [located t]
+| t=located(htype){
+    [t]
 }
 
 typelist : 
-| t=htype COMMA tl=typelist {
-  (located t)::tl
+| t=located(htype) COMMA tl=typelist {
+  t::tl
 }
-|t=htype{
-    [located t]
+|t=located(htype){
+  [t]
+}
+
+typevarlist : 
+| t=located(VARIABLE) COMMA tl=typevarlist {
+  (Position.map (fun v -> TId v) t)::tl
+}
+|t=located(VARIABLE){
+  [Position.map (fun v -> TId v) t]
 }
 
 
 
 typeScheme :
-| LCROCHET l=typelist RCROCHET t=htype {
-  ForallTy(l,located t)
+| LCROCHET l=typevarlist RCROCHET t=located(htype) {
+  ForallTy(l,t)
 } 
-| t=htype {
-  ForallTy(located t,[])
+| t=located(htype) {
+  ForallTy([],t)
 }
 
 
 
 labelPatternList :
-| id = IDENTIFICATEUR EQUAL p = pattern {
-  [located id, located p]
+| id = located(IDENTIFICATEUR) EQUAL p = located(pattern) {
+  [Position.map (fun v -> LId v) id, p]
 }
 
-| id = IDENTIFICATEUR EQUAL p = pattern COMMA l=labelPatternList {
-  (located id , located p) :: l
+| id = located(IDENTIFICATEUR) EQUAL p = located(pattern) COMMA l=labelPatternList {
+  (Position.map (fun v -> LId v) id ,p) :: l
 }
 
 
 listPattern :
-| p=pattern {
+| p=located(pattern) {
   [p]
 }
-| p=pattern COMMA l=listPattern{
-  (located p) :: (located l)
+| p=located(pattern) COMMA l=listPattern{
+  p :: l
 }
 
 pattern :
-| i = IDENTIFICATEUR {
-  PVariable(located i)
+| i = located(IDENTIFICATEUR) {
+  PVariable(i)
 }
 | b = BHORIZONTALE {
   PWildcard()
 }
-| i = ENTIER {
-  PLiteral(located LInt(i))
+| i = located(ENTIER) {
+  PLiteral( LInt(i))
 }
 
 | LPAR RPAR {PTuple([])}
 
 | LPAR p=listPattern RPAR {
-  PTuple(located p)
+  PTuple(p)
 }
 
-| p=pattern DPOINTS t = htype{
-  PTypeAnnotation(located p,located t)
+| p=located(pattern) DPOINTS t = located(htype){
+  PTypeAnnotation(p,t)
 }
 
-| p=pattern BVERTICALE pp=pattern {
-  POr((located p) ::[located pp])
+| p=located(pattern) BVERTICALE pp=located(pattern) {
+  POr(p ::[pp])
 }
-| p = pattern DIS pp=pattern {
-  PAnd((located p)::[located pp])
+| p = located(pattern) DIS pp=located(pattern) {
+  PAnd(p::[pp])
 }
 
 | LPAR l = labelPatternList RPAR {
@@ -132,20 +242,20 @@ pattern :
 }
 
 
-| c = CONST_ID LCHEVRON t=typelist RCHEVRON LPAR l = listPattern RPAR {
-  PTaggedValue(located c, t,l)
+| c = located(CONST_ID) LCHEVRON t=typelist RCHEVRON LPAR l = listPattern RPAR {
+  PTaggedValue(Position.map (fun v -> KId v) c, t,l)
 }
 
-| c = CONST_ID {
-  PTaggedValue(located c, [],[])
+| c = located(CONST_ID) {
+  PTaggedValue(Position.map (fun v -> KId v) c, [],[])
 }
 
-| c = CONST_ID  LPAR l = listPattern RPAR {
-  PTaggedValue(located c, [],l)
+| c = located(CONST_ID)  LPAR l = listPattern RPAR {
+  PTaggedValue(Position.map (fun v -> KId v) c, [],l)
 }
 
-| c = CONST_ID LCHEVRON t=typelist RCHEVRON  {
-  PTaggedValue(located c, t,[])
+| c = located(CONST_ID) LCHEVRON t=typelist RCHEVRON  {
+  PTaggedValue(Position.map (fun v -> KId v) c, t,[])
 }
 
 //TODO char
