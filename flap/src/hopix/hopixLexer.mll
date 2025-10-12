@@ -85,6 +85,7 @@ rule token = parse
   | "["  { LCROCHET }
   |  "]" { RCROCHET }
   | ","  { COMMA }
+  | "."  { DOT }
   
   (* binop *)
   | "+"  { PLUS }
@@ -113,10 +114,7 @@ rule token = parse
 
 
   (* Litterals *)
-
-
-
-  | entier as e             { ENTIER(e)                          }
+  | entier as e             { ENTIER(e)  }
   | "'" (atom as a ) "'"    { let c = char_of_int(int_of_string a) in if (Char.code c) > 32 then CHAR(c)
                               else error lexbuf "Non printable char"
                             }
