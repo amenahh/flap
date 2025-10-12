@@ -48,11 +48,11 @@ definition:
 | EXTERN var_id =located(IDENTIFICATEUR) ts = located(typeScheme) {
   DeclareExtern(Position.map (fun v -> Id v) var_id,ts)
 }
-(*
+
 | vd = vdefinition {
   DefineValue vd
 }
-*)
+
 tdefinition:
 | BVERTICALE? constr_id = located(CONST_ID) {
   DefineSumType [(Position.map (fun v -> KId v) constr_id,[])]
@@ -97,17 +97,18 @@ tdefinitioniter:
 | BVERTICALE constr_id = located(CONST_ID) td = tdefinitioniter {
   (Position.map (fun v -> KId v) constr_id,[])::td
 }
- (*
+
+
 vdefinition:
-| LET var_id=IDENTIFICATEUR EQUAL exp=expr {
-  SimpleValue (located var_id,None,located exp)
+| LET var_id=located(IDENTIFICATEUR) EQUAL exp=located(expr) {
+  SimpleValue (Position.map (fun v -> Id v) var_id,None,exp)
 }
 
-| LET var_id=IDENTIFICATEUR DPOINTS ts = typeScheme EQUAL exp=expr{
-  SimpleValue (located var_id,Some (located ts),located exp)
+| LET var_id=located(IDENTIFICATEUR) DPOINTS ts = located(typeScheme) EQUAL exp=located(expr){
+  SimpleValue (Position.map (fun v -> Id v) var_id,Some ts,exp)
 }
 
- 
+(* 
 | FUN fd = fundef {
   RecFunctions [(located ,)]
 }
@@ -125,8 +126,8 @@ listfun:
 }
 *)
 expr:
-|c=CHAR {
-  LChar c 
+|c=located(CHAR) {
+  Literal   (Position.map (fun v -> LChar v) c )
 }
 
 htype : 
