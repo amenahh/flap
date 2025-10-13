@@ -119,10 +119,27 @@ rule token = parse
 
 
   | entier as e             { ENTIER(e)                          }
-  | "'" (atom as a ) "'"    { let c = char_of_int(int_of_string a) in if (Char.code c) > 32 then CHAR(c)
-                              else error lexbuf "Non printable char"
-                            }
-
+  | "'\\n'"                 { CHAR '\n'                          }
+  | "'\\t'"                 { CHAR '\t'                          }
+  | "'\\''"                 { CHAR '\''                          }
+  | "'\\\\'"                { CHAR '\\'                          }
+  | "'\\r'"                 { CHAR '\r'                          }
+  | "'\\b'"                 { CHAR '\b'                          }
+  | "'\\0x" (hexa hexa as n ) "'" {
+  let c = int_of_string ("0x" ^ n) in
+  if  c >= 0 && c <= 255 then CHAR (char_of_int c)
+  else error lexbuf "Bad hexa char"
+  }
+  | "'\\" (digit digit digit as i) "'" {
+  let c = int_of_string i in
+  if c >= 0 && c <= 255 then CHAR (char_of_int c)
+  else error lexbuf "Bad octal char"
+  }
+  | "'" ([^'\'''\\'] as c) "'"  
+  { 
+    if (Char.code c) > 32 then CHAR(c)
+    else error lexbuf "Non printable char"
+  }
 
   | identificateur as ident { IDENTIFICATEUR(ident) }
   | variable as v { VARIABLE(v) }
@@ -142,15 +159,27 @@ and comment cpt  = parse
   | _            { comment cpt lexbuf     }
 
 and string = parse 
-  | atom as a { 
-    let c = char_of_int(int_of_string a) in 
-    if (Char.code c) > 32 then (Buffer.add_char string_buffer (c); string lexbuf) (*Petite verif pour être sur que le char est affichable *)
-    else error lexbuf "Non printable char"
-    
-    }
-  | '\''  { Buffer.add_char string_buffer '\''; string lexbuf}
-  | "\""  { Buffer.add_char string_buffer '\"'; string lexbuf} 
+  | "\\n"                                 { Buffer.add_char string_buffer '\n'; string lexbuf }
+  | "\\t"                                 { Buffer.add_char string_buffer '\t'; string lexbuf }
+  | "\\'"                                 { Buffer.add_char string_buffer '\''; string lexbuf }
+  | "\\\""                                { Buffer.add_char string_buffer '"';  string lexbuf  }
+  | "\\r"                                 { Buffer.add_char string_buffer '\r'; string lexbuf }
+  | "\\b"                                 { Buffer.add_char string_buffer '\b'; string lexbuf }
+  | "\\\\"                                { Buffer.add_char string_buffer '\\'; string lexbuf }
+  | "\\0x" (hexa hexa as n )  {
+  let c = int_of_string ("0x" ^ n) in
+  if c >= 0 && c <= 255 then (Buffer.add_char string_buffer (char_of_int c) ; string lexbuf)
+  else error lexbuf "Bad hexa in string"
+  }
+  | "\\" (digit digit digit as i) {
+  let c = int_of_string i in
+  if c >= 0 && c <= 255 then (Buffer.add_char string_buffer (char_of_int c) ; string lexbuf)
+  else error lexbuf "Bad octal in string"
+  }
   | '"'   { let s = Buffer.contents string_buffer in
-            Buffer.clear string_buffer;
-            STRING s}
+      Buffer.clear string_buffer;
+      STRING s}
+  | _ as c { 
+      Buffer.add_char string_buffer c; string lexbuf 
+  }
   | eof   { error lexbuf "string is not closed."}
