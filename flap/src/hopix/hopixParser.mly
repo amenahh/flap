@@ -8,13 +8,14 @@
 
 
 %token EOF IF WHILE LET FUN TYPE EXTERN AND MATCH THEN ELSE DO UNTIL FOR FROM TO
-%token LPAR RPAR LCROCHET RCROCHET COMMA RARROW DIS LACC RACC
+%token LPAR RPAR LCROCHET RCROCHET COMMA RARROW DIS LACC RACC AFFECTATION BACKSLASH
 %token EQUAL LCHEVRON RCHEVRON DPOINTS BVERTICALE MOINS EXCLAMATION PLUS REF 
-%token INTEROGATION BHORIZONTALE DIV STAR LT GT DRARROW EQ OR LTE
+%token INTEROGATION BHORIZONTALE DIV STAR LT GT DRARROW EQ OR LTE DOT PVIRGULE
 %token <string> VARIABLE
 %token <string> CONST_ID
 %token <string> IDENTIFICATEUR
-%token <string> ENTIER
+// %token <string> ENTIER
+%token <int64> ENTIER
 %token <string> STRING
 %token <char> CHAR 
 
@@ -126,9 +127,131 @@ listfun:
 }
 *)
 expr:
+|i=located(ENTIER){
+  Literal (Position.map (fun v -> LInt v) i )
+}
+|str = located(STRING){
+  Literal (Position.map (fun v -> LString v) str)
+}
 |c=located(CHAR) {
   Literal   (Position.map (fun v -> LChar v) c )
 }
+|var_id=located(IDENTIFICATEUR) {
+  Variable ((Position.map (fun v -> Id v) var_id),None)
+}
+|var_id=located(IDENTIFICATEUR) LCHEVRON tl = typelist RCHEVRON {
+  Variable ((Position.map (fun v -> Id v) var_id),Some tl)
+}
+|constr_id=located(CONST_ID) {
+  Tagged ((Position.map (fun v -> KId v) constr_id),None,[])
+}
+|constr_id=located(CONST_ID) LCHEVRON tl= typelist RCHEVRON {
+  Tagged ((Position.map (fun v -> KId v) constr_id),Some tl,[])
+}
+|constr_id=located(CONST_ID) LPAR el = exprlist RPAR {
+  Tagged ((Position.map (fun v -> KId v) constr_id),None,el)
+}
+|constr_id=located(CONST_ID) LCHEVRON tl= typelist RCHEVRON LPAR el = exprlist RPAR{
+  Tagged ((Position.map (fun v -> KId v) constr_id),Some tl,el)
+}
+|LPAR RPAR {
+  Tuple([])
+}
+|LPAR el=exprlist RPAR { (*prend en compte tuple et parenthésage *)
+  Tuple(el)
+}
+|WHILE LPAR e1=located(expr) RPAR LACC e2=located(expr) RACC {
+  While (e1,e2)
+}
+|DO LACC e1=located(expr) RACC UNTIL LPAR e2=located(expr) RPAR {
+  While (e2,e1) (* Pas sur parce que techniquement until veux que While((!e2),e1) *)
+}
+| FOR var_id=located(IDENTIFICATEUR) FROM LPAR e1=located(expr) RPAR TO LPAR e2=located(expr) RPAR LACC e3=located(expr) RACC {
+  For (Position.map (fun v -> Id v) var_id,e1,e2,e3)
+}
+| LPAR e1=located(expr) DPOINTS t=located(htype) RPAR {
+  TypeAnnotation (e1,t)
+}
+
+
+| e= located(expr) PVIRGULE e1 = located(expr) {
+  Sequence( [e;e1] )
+}
+
+| v = vdefinition PVIRGULE e=located(expr) {
+  Define(v,e)
+}
+
+| e = located(expr) e1 = located(expr) {
+  Apply(e,e1)
+}
+
+| e = located(expr) binop e1 = located(expr){
+  Apply(e,e1)
+}
+
+| e= located(expr) AFFECTATION e1 = located(expr) {
+  Assign(e,e1)
+}
+
+| BACKSLASH p=located(pattern) RARROW e = located(expr) {
+  Fun(FunctionDefinition(p,e))
+}
+
+| e=located(expr) DOT label_id=located(IDENTIFICATEUR) {
+  Record([Position.map (fun v -> LId v) label_id,e],None)
+}
+
+| e=located(expr) DOT label_id=located(IDENTIFICATEUR) LCHEVRON t=typelist RCHEVRON {
+  Record([Position.map (fun v -> LId v) label_id,e], Some t)
+}
+
+// | IF LPAR e1 = expr RPAR THEN LACC e2 = expr RACC {
+//   IfThenElse()
+// }
+
+| IF LPAR e1 = located(expr) RPAR THEN LACC e2 = located(expr) RACC ELSE LACC e3 = located(expr) RACC {
+  IfThenElse(e1,e2,e3)
+}
+
+| MATCH LPAR e=located(expr) RPAR LACC b= branchList RACC {
+  Case(e,b)
+}
+
+| REF e= located(expr) {
+  Ref(e)
+}
+
+| EXCLAMATION e=located(expr) {
+  Read(e)
+}
+
+branchList :
+| BVERTICALE b = located(branche) {
+  [b]
+}
+| BVERTICALE b = located(branche) BVERTICALE l=branchList {
+  b::l
+}
+| b = located(branche) {
+  [b]
+}
+| b = located(branche) BVERTICALE l=branchList {
+  b::l
+}
+
+branche:
+| p = located(pattern) RARROW e = located(expr) {
+  Branch(p,e)
+}
+
+exprlist:
+| e=located(expr) {
+  [e]
+}
+| e=located(expr) COMMA el=exprlist {
+  e::el
+} 
 
 htype : 
 |type_con=IDENTIFICATEUR {
@@ -207,14 +330,25 @@ listPattern :
 
 pattern :
 | i = located(IDENTIFICATEUR) {
-  PVariable(i)
+  (*PVariable(i)*)
+  PVariable(Position.map (fun i -> Id i) i)
 }
-| b = BHORIZONTALE {
-  PWildcard()
+| BHORIZONTALE {
+  PWildcard
 }
 | i = located(ENTIER) {
-  PLiteral( LInt(i))
+  PLiteral( Position.map (fun i -> LInt i) i)
 }
+
+| s = located (STRING) {
+  PLiteral( Position.map (fun s -> LString s) s)
+}
+
+| c =located(CHAR) {
+  PLiteral(   Position.map (fun c -> LChar c) c)
+
+}
+
 
 | LPAR RPAR {PTuple([])}
 
@@ -234,32 +368,44 @@ pattern :
 }
 
 | LPAR l = labelPatternList RPAR {
-  PRecord(l,p)
+  PRecord(l,None)
 }
 
 | LPAR l = labelPatternList RPAR LCHEVRON t=typelist RCHEVRON {
-  PRecord( l,p)
+  PRecord( l,Some t)
 }
 
 
 | c = located(CONST_ID) LCHEVRON t=typelist RCHEVRON LPAR l = listPattern RPAR {
-  PTaggedValue(Position.map (fun v -> KId v) c, t,l)
+  PTaggedValue(Position.map (fun v -> KId v) c, Some t,l)
 }
 
 | c = located(CONST_ID) {
-  PTaggedValue(Position.map (fun v -> KId v) c, [],[])
+  PTaggedValue(Position.map (fun v -> KId v) c, None,[])
 }
 
 | c = located(CONST_ID)  LPAR l = listPattern RPAR {
-  PTaggedValue(Position.map (fun v -> KId v) c, [],l)
+  PTaggedValue(Position.map (fun v -> KId v) c, None,l)
 }
 
 | c = located(CONST_ID) LCHEVRON t=typelist RCHEVRON  {
-  PTaggedValue(Position.map (fun v -> KId v) c, t,[])
+  PTaggedValue(Position.map (fun v -> KId v) c, Some t,[])
 }
 
-//TODO char
-//RODOString
+
+binop :
+| PLUS {}
+| MOINS {}
+| STAR {}
+| DIV {}
+| OR {}
+| AND  {}
+| EQ {}
+| LTE {}
+| DRARROW {}
+| LT {}
+| GT {}
+
 
 
 %inline located(X): x=X {

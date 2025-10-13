@@ -3,6 +3,7 @@
   open Error
   open Position
   open HopixParser
+  open Int64
 
   let next_line_and f lexbuf  =
     Lexing.new_line lexbuf;
@@ -87,8 +88,11 @@ rule token = parse
   | "["  { LCROCHET }
   |  "]" { RCROCHET }
   | ","  { COMMA }
+  | "."  { DOT }
+  | ";"  { PVIRGULE }
   
   (* binop *)
+  | "\\" { BACKSLASH }
   | "+"  { PLUS }
   | "-"  { MOINS }
   | "*" { STAR }
@@ -107,6 +111,7 @@ rule token = parse
   | "|"  { BVERTICALE }
   | "->" { RARROW }
   | "&"  { DIS }
+  | ":=" { AFFECTATION }
   
   | "!"  { EXCLAMATION }
   | "&&" { AND }
