@@ -127,9 +127,52 @@ listfun:
 }
 *)
 expr:
+|i=located(ENTIER){
+  Literal (Position.map (fun v -> LInt v) i )
+}
+|str = located(STRING){
+  Literal (Position.map (fun v -> LString v) str)
+}
 |c=located(CHAR) {
   Literal   (Position.map (fun v -> LChar v) c )
 }
+|var_id=located(IDENTIFICATEUR) {
+  Variable ((Position.map (fun v -> Id v) var_id),None)
+}
+|var_id=located(IDENTIFICATEUR) LCHEVRON tl = typelist RCHEVRON {
+  Variable ((Position.map (fun v -> Id v) var_id),Some tl)
+}
+|constr_id=located(CONST_ID) {
+  Tagged ((Position.map (fun v -> KId v) constr_id),None,[])
+}
+|constr_id=located(CONST_ID) LCHEVRON tl= typelist RCHEVRON {
+  Tagged ((Position.map (fun v -> KId v) constr_id),Some tl,[])
+}
+|constr_id=located(CONST_ID) LPAR el = exprlist RPAR {
+  Tagged ((Position.map (fun v -> KId v) constr_id),None,el)
+}
+|constr_id=located(CONST_ID) LCHEVRON tl= typelist RCHEVRON LPAR el = exprlist RPAR{
+  Tagged ((Position.map (fun v -> KId v) constr_id),Some tl,el)
+}
+|LPAR RPAR {
+  Tuple([])
+}
+|LPAR el=exprlist RPAR { (*prend en compte tuple et parenthésage *)
+  Tuple(el)
+}
+|WHILE LPAR e1=located(expr) RPAR LACC e2=located(expr) RACC {
+  While (e1,e2)
+}
+|DO LACC e1=located(expr) RACC UNTIL LPAR e2=located(expr) RPAR {
+  While (e2,e1) (* Pas sur parce que techniquement until veux que While((!e2),e1) *)
+}
+| FOR var_id=located(IDENTIFICATEUR) FROM LPAR e1=located(expr) RPAR TO LPAR e2=located(expr) RPAR LACC e3=located(expr) RACC {
+  For (Position.map (fun v -> Id v) var_id,e1,e2,e3)
+}
+| LPAR e1=located(expr) DPOINTS t=located(htype) RPAR {
+  TypeAnnotation (e1,t)
+}
+
 
 | e= located(expr) PVIRGULE e1 = located(expr) {
   Sequence( [e;e1] )
@@ -202,6 +245,13 @@ branche:
   Branch(p,e)
 }
 
+exprlist:
+| e=located(expr) {
+  [e]
+}
+| e=located(expr) COMMA el=exprlist {
+  e::el
+} 
 
 htype : 
 |type_con=IDENTIFICATEUR {
