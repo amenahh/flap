@@ -22,7 +22,7 @@
 %start<HopixAST.t> program
 %%
 
-program: ds = definition* EOF
+program: ds = located(definition)* EOF
 {  
    ds
 
@@ -46,7 +46,7 @@ definition:
   DefineType (Position.map (fun v -> TCon v) type_con,tvl,Abstract)
 }
 (*extern var_id : type_scheme*)
-
+(*
 | EXTERN var_id =located(IDENTIFICATEUR) ts = located(typeScheme) {
   DeclareExtern(Position.map (fun v -> Id v) var_id,ts)
 }
@@ -55,7 +55,7 @@ definition:
 | vd = vdefinition {
   DefineValue vd
 }
-
+*)
 
 tdefinition:
 | BVERTICALE? constr_id = located(CONST_ID) {
