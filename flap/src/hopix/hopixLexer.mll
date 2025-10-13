@@ -123,7 +123,7 @@ rule token = parse
 
 
 
-  | entier as e             { ENTIER(e)                          }
+  | entier as e             { ENTIER(Int64.of_string e)          }
   | "'\\n'"                 { CHAR '\n'                          }
   | "'\\t'"                 { CHAR '\t'                          }
   | "'\\''"                 { CHAR '\''                          }
