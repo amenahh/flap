@@ -46,7 +46,8 @@ definition:
   DefineType (Position.map (fun v -> TCon v) type_con,tvl,Abstract)
 }
 (*extern var_id : type_scheme*)
-(*
+
+
 | EXTERN var_id =located(IDENTIFICATEUR) ts = located(typeScheme) {
   DeclareExtern(Position.map (fun v -> Id v) var_id,ts)
 }
@@ -55,7 +56,7 @@ definition:
 | vd = vdefinition {
   DefineValue vd
 }
-*)
+
 
 tdefinition:
 | BVERTICALE? constr_id = located(CONST_ID) {
@@ -209,9 +210,9 @@ expr:
   Record([Position.map (fun v -> LId v) label_id,e], Some t)
 }
 
-// | IF LPAR e1 = expr RPAR THEN LACC e2 = expr RACC {
-//   IfThenElse()
-// }
+| IF LPAR e1 = located(expr) RPAR THEN LACC e2 = located(expr) RACC {
+  IfThenElse(e1,e2,(Position.with_poss $startpos $endpos (Tuple([]))))
+}
 
 | IF LPAR e1 = located(expr) RPAR THEN LACC e2 = located(expr) RACC ELSE LACC e3 = located(expr) RACC {
   IfThenElse(e1,e2,e3)
