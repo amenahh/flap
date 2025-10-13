@@ -3,6 +3,7 @@
   open Error
   open Position
   open HopixParser
+  open Int64
 
   let next_line_and f lexbuf  =
     Lexing.new_line lexbuf;
@@ -88,8 +89,10 @@ rule token = parse
   |  "]" { RCROCHET }
   | ","  { COMMA }
   | "."  { DOT }
+  | ";"  { PVIRGULE }
   
   (* binop *)
+  | "\\" { BACKSLASH }
   | "+"  { PLUS }
   | "-"  { MOINS }
   | "*" { STAR }
@@ -108,6 +111,7 @@ rule token = parse
   | "|"  { BVERTICALE }
   | "->" { RARROW }
   | "&"  { DIS }
+  | ":=" { AFFECTATION }
   
   | "!"  { EXCLAMATION }
   | "&&" { AND }
@@ -116,7 +120,7 @@ rule token = parse
 
 
   (* Litterals *)
-  | entier as e             { ENTIER(e)  }
+  | entier as e             { ENTIER(of_string e)  }
   | "'" (atom as a ) "'"    { let c = char_of_int(int_of_string a) in if (Char.code c) > 32 then CHAR(c)
                               else error lexbuf "Non printable char"
                             }
