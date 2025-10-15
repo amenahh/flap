@@ -115,7 +115,7 @@ rule token = parse
   
   | "!"  { EXCLAMATION }
   | "&&" { AND }
-  | "?"  { INTEROGATION }
+  (* | "?"  { INTEROGATION } *)
   | "_"  { BHORIZONTALE }
 
 

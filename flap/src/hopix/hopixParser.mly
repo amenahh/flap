@@ -10,11 +10,12 @@
 %token EOF IF WHILE LET FUN TYPE EXTERN AND MATCH THEN ELSE DO UNTIL FOR FROM TO
 %token LPAR RPAR LCROCHET RCROCHET COMMA RARROW DIS LACC RACC AFFECTATION BACKSLASH
 %token EQUAL LCHEVRON RCHEVRON DPOINTS BVERTICALE MOINS EXCLAMATION PLUS REF 
-%token INTEROGATION BHORIZONTALE DIV STAR LT GT DRARROW EQ OR LTE DOT PVIRGULE
+%token BHORIZONTALE DIV STAR LT GT DRARROW EQ OR LTE DOT PVIRGULE
 %token <string> VARIABLE
 %token <string> CONST_ID
 %token <string> IDENTIFICATEUR
 // %token <string> ENTIER
+// %token INTEROGATION
 %token <int64> ENTIER
 %token <string> STRING
 %token <char> CHAR 
@@ -190,9 +191,17 @@ expr:
   Apply(e,e1)
 }
 
-| e = located(expr) binop e1 = located(expr){
-  Apply(e,e1)
+| e = located(expr) b= located(binop) e1 = located(expr){
+  (*
+  Apply(Position.map (fun s -> Literal s) b,Apply(e,e1))
+      Apply(Literal(b),Apply(e,e1))
+      *)
+
+   Apply((Position.with_poss $startpos $endpos (Literal(b))),Apply(e,e1))
+  
+  
 }
+
 
 | e= located(expr) AFFECTATION e1 = located(expr) {
   Assign(e,e1)
@@ -398,18 +407,39 @@ pattern :
 
 
 binop :
-| PLUS {}
-| MOINS {}
-| STAR {}
-| DIV {}
-| OR {}
-| AND  {}
-| EQ {}
-| LTE {}
-| DRARROW {}
-| LT {}
-| GT {}
-
+| located(PLUS) {
+  Position.map (fun s -> LString s) "+"
+}
+| located(MOINS) {
+  Position.map (fun s -> LString s) "-"
+}
+| located(STAR) {
+  Position.map (fun s -> LString s) "*"
+}
+| located(DIV) {
+   Position.map (fun s -> LString s) "/"
+}
+| located(OR) {
+ Position.map (fun s -> LString s) "||"
+}
+| located(AND)  {
+  Position.map (fun s -> LString s) "&&"
+}
+| located(EQ) {
+  Position.map (fun s -> LString s) "=?"
+}
+| located(LTE) {
+  Position.map (fun s -> LString s) "<=?"
+}
+| located(DRARROW) {
+  Position.map (fun s -> LString s) ">=?"
+}
+| located(LT) {
+ Position.map (fun s -> LString s) "<?"
+}
+| located(GT) {
+  Position.map (fun s -> LString s) ">?"
+}
 
 
 %inline located(X): x=X {
