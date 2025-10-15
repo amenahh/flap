@@ -270,7 +270,7 @@ htype :
 | LPAR t=htype RPAR {
   t
 }
-| t1=located(htype) STAR tu = typeUplet{
+| t1=located(htype) tu = typeUplet{
   TyTuple (t1::tu)
 }
 | tv = VARIABLE {
@@ -279,12 +279,13 @@ htype :
 
 
 typeUplet : 
+| STAR t=located(htype){
+    [t]
+}
 | t=located(htype) STAR tu= typeUplet {
   (t):: tu
 }
-| t=located(htype){
-    [t]
-}
+
 
 typelist : 
 | t=located(htype) COMMA tl=typelist {
