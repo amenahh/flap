@@ -152,30 +152,50 @@ expr_atomic:
 | MATCH LPAR e=located(expr) RPAR LACC b= branchList RACC {
   Case(e,b)
 }
-|WHILE LPAR e1=located(expr) RPAR LACC e2=located(expr) RACC {
-  While (e1,e2)
-}
 |DO LACC e1=located(expr) RACC UNTIL LPAR e2=located(expr) RPAR {
   While (e2,e1) (* Pas sur parce que techniquement until veux que While((!e2),e1) *)
 }
 | FOR var_id=located(IDENTIFICATEUR) FROM LPAR e1=located(expr) RPAR TO LPAR e2=located(expr) RPAR LACC e3=located(expr) RACC {
   For (Position.map (fun v -> Id v) var_id,e1,e2,e3)
 }
-| IF LPAR e1 = located(expr) RPAR THEN LACC e2 = located(expr) RACC {
-  IfThenElse(e1,e2,(Position.with_poss $startpos $endpos (Tuple([]))))
-}
-
-| IF LPAR e1 = located(expr) RPAR THEN LACC e2 = located(expr) RACC ELSE LACC e3 = located(expr) RACC {
-  IfThenElse(e1,e2,e3)
-}
 
 app_chaine:
-| e = located(expr) e1 = located(expr) {
+| e = located(expr_atomic) e1 = located(expr_atomic) {
   Apply(e,e1)
 }
 
 expr:
 |ea = expr_atomic { ea }
+
+| e=located(expr) DOT label_id=located(IDENTIFICATEUR) LCHEVRON t=typelist RCHEVRON {
+  Field(e,Position.map (fun v -> LId v) label_id, Some t)
+}
+| e=located(expr) DOT label_id=located(IDENTIFICATEUR) {
+  Field(e,Position.map (fun v -> LId v) label_id, None)
+}
+
+
+|LACC rl= recordlist RACC {
+  Record(rl,None)
+}
+|LACC rl= recordlist RACC LCHEVRON tl=typelist RCHEVRON{
+  Record(rl,Some tl)
+}
+
+
+| IF LPAR e1 = located(expr) RPAR THEN LACC e2 = located(expr) RACC ELSE LACC e3 = located(expr) RACC {
+  IfThenElse(e1,e2,e3)
+}
+|WHILE LPAR e1=located(expr) RPAR LACC e2=located(expr) RACC {
+  While (e1,e2)
+}
+
+|ac = app_chaine { ac }
+| IF LPAR e1 = located(expr) RPAR THEN LACC e2 = located(expr) RACC {
+  IfThenElse(e1,e2,(Position.with_poss $startpos $endpos (Tuple([]))))
+}
+
+
 |var_id=located(IDENTIFICATEUR) {
   Variable ((Position.map (fun v -> Id v) var_id),None)
 }
@@ -213,13 +233,6 @@ expr:
   Fun(FunctionDefinition(p,e))
 }
 
-| e=located(expr) DOT label_id=located(IDENTIFICATEUR) {
-  Record([Position.map (fun v -> LId v) label_id,e],None)
-}
-
-| e=located(expr) DOT label_id=located(IDENTIFICATEUR) LCHEVRON t=typelist RCHEVRON {
-  Record([Position.map (fun v -> LId v) label_id,e], Some t)
-}
 
 | REF e= located(expr) {
   Ref(e)
@@ -227,6 +240,15 @@ expr:
 
 | EXCLAMATION e=located(expr) {
   Read(e)
+}
+
+
+recordlist:
+| label_id=located(IDENTIFICATEUR) EQUAL e=located(expr){
+  [(Position.map (fun v -> LId v) label_id,e)]
+}
+| label_id=located(IDENTIFICATEUR) EQUAL e=located(expr) COMMA rl=recordlist{
+  (Position.map (fun v -> LId v) label_id,e)::rl
 }
 
 branchList :
