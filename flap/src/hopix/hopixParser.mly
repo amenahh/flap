@@ -10,22 +10,24 @@
 %token EOF IF WHILE LET FUN TYPE EXTERN AND MATCH THEN ELSE DO UNTIL FOR FROM TO
 %token LPAR RPAR LCROCHET RCROCHET COMMA RARROW DIS LACC RACC AFFECTATION BACKSLASH
 %token EQUAL LCHEVRON RCHEVRON DPOINTS BVERTICALE MOINS EXCLAMATION PLUS REF 
-%token INTEROGATION BHORIZONTALE DIV STAR LT GT DRARROW EQ OR LTE DOT PVIRGULE
+%token BHORIZONTALE DIV STAR LT GT DRARROW EQ OR LTE DOT PVIRGULE
 %token <string> VARIABLE
 %token <string> CONST_ID
 %token <string> IDENTIFICATEUR
 // %token <string> ENTIER
+// %token INTEROGATION
 %token <int64> ENTIER
 %token <string> STRING
 %token <char> CHAR 
+%left PLUS
 
 %start<HopixAST.t> program
 %%
 
 program: ds = located(definition)* EOF
 {  
-   ds
-
+   ds  
+ 
 }
 
 definition:
@@ -105,11 +107,11 @@ tdefinitioniter:
 
 
 vdefinition:
-| LET var_id=located(IDENTIFICATEUR) EQUAL exp=located(expr) {
+| LET var_id=located(IDENTIFICATEUR) EQUAL exp=located(local_expr) {
   SimpleValue (Position.map (fun v -> Id v) var_id,None,exp)
 }
 
-| LET var_id=located(IDENTIFICATEUR) DPOINTS ts = located(typeScheme) EQUAL exp=located(expr){
+| LET var_id=located(IDENTIFICATEUR) DPOINTS ts = located(typeScheme) EQUAL exp=located(local_expr){
   SimpleValue (Position.map (fun v -> Id v) var_id,Some ts,exp)
 }
 
@@ -130,7 +132,7 @@ listfun:
 
 }
 *)
-expr:
+expr_atomic:
 |i=located(ENTIER){
   Literal (Position.map (fun v -> LInt v) i )
 }
@@ -140,6 +142,68 @@ expr:
 |c=located(CHAR) {
   Literal   (Position.map (fun v -> LChar v) c )
 }
+|LPAR RPAR {
+  Tuple([])
+}
+|LPAR el=exprlist RPAR {
+  Tuple(el)
+}
+| LPAR e1=located(expr) DPOINTS t=located(htype) RPAR {
+  TypeAnnotation (e1,t)
+}
+| MATCH LPAR e=located(expr) RPAR LACC b= branchList RACC {
+  Case(e,b)
+}
+|DO LACC e1=located(expr) RACC UNTIL LPAR e2=located(expr) RPAR {
+  While (e2,e1) (* Pas sur parce que techniquement until veux que While((!e2),e1) *)
+}
+| FOR var_id=located(IDENTIFICATEUR) FROM LPAR e1=located(expr) RPAR TO LPAR e2=located(expr) RPAR LACC e3=located(expr) RACC {
+  For (Position.map (fun v -> Id v) var_id,e1,e2,e3)
+}
+
+app_chaine:
+| e = located(expr_atomic) e1 = located(expr_atomic) {
+  Apply(e,e1)
+}
+
+local_expr:
+  | e=expr { e }                          
+  | el=located(local_expr) PVIRGULE e=located(expr) { 
+    Sequence( [el;e] )
+  }
+
+expr:
+|ea = expr_atomic { ea }
+
+| e=located(expr) DOT label_id=located(IDENTIFICATEUR) LCHEVRON t=typelist RCHEVRON {
+  Field(e,Position.map (fun v -> LId v) label_id, Some t)
+}
+| e=located(expr) DOT label_id=located(IDENTIFICATEUR) {
+  Field(e,Position.map (fun v -> LId v) label_id, None)
+}
+
+
+|LACC rl= recordlist RACC {
+  Record(rl,None)
+}
+|LACC rl= recordlist RACC LCHEVRON tl=typelist RCHEVRON{
+  Record(rl,Some tl)
+}
+
+
+| IF LPAR e1 = located(expr) RPAR THEN LACC e2 = located(expr) RACC ELSE LACC e3 = located(expr) RACC {
+  IfThenElse(e1,e2,e3)
+}
+|WHILE LPAR e1=located(expr) RPAR LACC e2=located(expr) RACC {
+  While (e1,e2)
+}
+
+|ac = app_chaine { ac }
+| IF LPAR e1 = located(expr) RPAR THEN LACC e2 = located(expr) RACC {
+  IfThenElse(e1,e2,(Position.with_poss $startpos $endpos (Tuple([]))))
+}
+
+
 |var_id=located(IDENTIFICATEUR) {
   Variable ((Position.map (fun v -> Id v) var_id),None)
 }
@@ -158,41 +222,22 @@ expr:
 |constr_id=located(CONST_ID) LCHEVRON tl= typelist RCHEVRON LPAR el = exprlist RPAR{
   Tagged ((Position.map (fun v -> KId v) constr_id),Some tl,el)
 }
-|LPAR RPAR {
-  Tuple([])
-}
-|LPAR el=exprlist RPAR { (*prend en compte tuple et parenthésage *)
-  Tuple(el)
-}
-|WHILE LPAR e1=located(expr) RPAR LACC e2=located(expr) RACC {
-  While (e1,e2)
-}
-|DO LACC e1=located(expr) RACC UNTIL LPAR e2=located(expr) RPAR {
-  While (e2,e1) (* Pas sur parce que techniquement until veux que While((!e2),e1) *)
-}
-| FOR var_id=located(IDENTIFICATEUR) FROM LPAR e1=located(expr) RPAR TO LPAR e2=located(expr) RPAR LACC e3=located(expr) RACC {
-  For (Position.map (fun v -> Id v) var_id,e1,e2,e3)
-}
-| LPAR e1=located(expr) DPOINTS t=located(htype) RPAR {
-  TypeAnnotation (e1,t)
-}
-
-
-| e= located(expr) PVIRGULE e1 = located(expr) {
-  Sequence( [e;e1] )
-}
 
 | v = vdefinition PVIRGULE e=located(expr) {
   Define(v,e)
 }
 
-| e = located(expr) e1 = located(expr) {
-  Apply(e,e1)
+| e = located(expr) b =located(binop) e1 = located(expr){
+  
+  let x = 
+  Position.with_poss $startpos $endpos (Variable(b,None))
+  in
+   let y = Position.with_poss $startpos $endpos (Apply(e,x))
+  in
+  Apply(y,e1)
+
 }
 
-| e = located(expr) binop e1 = located(expr){
-  Apply(e,e1)
-}
 
 | e= located(expr) AFFECTATION e1 = located(expr) {
   Assign(e,e1)
@@ -202,25 +247,6 @@ expr:
   Fun(FunctionDefinition(p,e))
 }
 
-| e=located(expr) DOT label_id=located(IDENTIFICATEUR) {
-  Record([Position.map (fun v -> LId v) label_id,e],None)
-}
-
-| e=located(expr) DOT label_id=located(IDENTIFICATEUR) LCHEVRON t=typelist RCHEVRON {
-  Record([Position.map (fun v -> LId v) label_id,e], Some t)
-}
-
-| IF LPAR e1 = located(expr) RPAR THEN LACC e2 = located(expr) RACC {
-  IfThenElse(e1,e2,(Position.with_poss $startpos $endpos (Tuple([]))))
-}
-
-| IF LPAR e1 = located(expr) RPAR THEN LACC e2 = located(expr) RACC ELSE LACC e3 = located(expr) RACC {
-  IfThenElse(e1,e2,e3)
-}
-
-| MATCH LPAR e=located(expr) RPAR LACC b= branchList RACC {
-  Case(e,b)
-}
 
 | REF e= located(expr) {
   Ref(e)
@@ -228,6 +254,15 @@ expr:
 
 | EXCLAMATION e=located(expr) {
   Read(e)
+}
+
+
+recordlist:
+| label_id=located(IDENTIFICATEUR) EQUAL e=located(expr){
+  [(Position.map (fun v -> LId v) label_id,e)]
+}
+| label_id=located(IDENTIFICATEUR) EQUAL e=located(expr) COMMA rl=recordlist{
+  (Position.map (fun v -> LId v) label_id,e)::rl
 }
 
 branchList :
@@ -279,7 +314,7 @@ htype :
 
 
 typeUplet : 
-| STAR t=located(htype){
+| STAR t=located(htype) {
     [t]
 }
 | t=located(htype) STAR tu= typeUplet {
@@ -361,16 +396,20 @@ pattern :
   PTuple(p)
 }
 
+| p=located(pattern) BVERTICALE pp=located(pattern) {
+  POr(p ::[pp])
+}
+
+| p = located(pattern) DIS pp=located(pattern) {
+  PAnd(p::[pp])
+}
+
 | p=located(pattern) DPOINTS t = located(htype){
   PTypeAnnotation(p,t)
 }
 
-| p=located(pattern) BVERTICALE pp=located(pattern) {
-  POr(p ::[pp])
-}
-| p = located(pattern) DIS pp=located(pattern) {
-  PAnd(p::[pp])
-}
+
+
 
 | LPAR l = labelPatternList RPAR {
   PRecord(l,None)
@@ -397,22 +436,79 @@ pattern :
   PTaggedValue(Position.map (fun v -> KId v) c, Some t,[])
 }
 
-
 binop :
-| PLUS {}
-| MOINS {}
-| STAR {}
-| DIV {}
-| OR {}
-| AND  {}
-| EQ {}
-| LTE {}
-| DRARROW {}
-| LT {}
-| GT {}
+| PLUS {
+  Id("+")
+}
+| MOINS {
+  Id("-")
+}
+| STAR {
+  Id("*")
+}
+| DIV {
+   Id("/")
+}
+| OR {
+ Id("||")
+}
+| AND {
+  Id("&&")
+}
+| EQ {
+  Id("=?")
+}
+| LTE {
+  Id ("<=?")
+}
+| DRARROW {
+   Id(">=?")
+}
+| LT {
+  Id("<?")
+}
+| GT {
+  Id(">?")
+}
 
+
+// binop :
+// | PLUS {
+//   Id("`+`")
+// }
+// | MOINS {
+//   Id("`-`")
+// }
+// | STAR {
+//   Id("`*`")
+// }
+// | DIV {
+//    Id("`/`")
+// }
+// | OR {
+//  Id("`||`")
+// }
+// | AND {
+//   Id("`&&`")
+// }
+// | EQ {
+//   Id("`=?`")
+// }
+// | LTE {
+//   Id ("`<=?`")
+// }
+// | DRARROW {
+//    Id("`>=?`")
+// }
+// | LT {
+//   Id("`<?`")
+// }
+// | GT {
+//   Id("`>?`")
+// }
 
 
 %inline located(X): x=X {
   Position.with_poss $startpos $endpos x
 }
+
