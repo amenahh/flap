@@ -167,7 +167,7 @@ app_chaine:
 }
 
 local_expr:
-  | ea=expr_atomic { ea }                          
+  | e=expr { e }                          
   | el=located(local_expr) PVIRGULE e=located(expr) { 
     Sequence( [el;e] )
   }
@@ -222,7 +222,6 @@ expr:
 |constr_id=located(CONST_ID) LCHEVRON tl= typelist RCHEVRON LPAR el = exprlist RPAR{
   Tagged ((Position.map (fun v -> KId v) constr_id),Some tl,el)
 }
-
 
 | v = vdefinition PVIRGULE e=located(expr) {
   Define(v,e)
