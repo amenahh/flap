@@ -19,6 +19,8 @@
 %token <string> STRING
 %token <char> CHAR 
 
+
+
 %start<HopixAST.t> program
 %%
 
@@ -105,11 +107,11 @@ tdefinitioniter:
 
 
 vdefinition:
-| LET var_id=located(IDENTIFICATEUR) EQUAL exp=located(expr) {
+| LET var_id=located(IDENTIFICATEUR) EQUAL exp=located(local_expr) {
   SimpleValue (Position.map (fun v -> Id v) var_id,None,exp)
 }
 
-| LET var_id=located(IDENTIFICATEUR) DPOINTS ts = located(typeScheme) EQUAL exp=located(expr){
+| LET var_id=located(IDENTIFICATEUR) DPOINTS ts = located(typeScheme) EQUAL exp=located(local_expr){
   SimpleValue (Position.map (fun v -> Id v) var_id,Some ts,exp)
 }
 
@@ -164,6 +166,12 @@ app_chaine:
   Apply(e,e1)
 }
 
+local_expr:
+  | ea=expr_atomic { ea }                          
+  | el=located(local_expr) PVIRGULE e=located(expr) { 
+    Sequence( [el;e] )
+  }
+
 expr:
 |ea = expr_atomic { ea }
 
@@ -214,9 +222,8 @@ expr:
 |constr_id=located(CONST_ID) LCHEVRON tl= typelist RCHEVRON LPAR el = exprlist RPAR{
   Tagged ((Position.map (fun v -> KId v) constr_id),Some tl,el)
 }
-| e= located(expr) PVIRGULE e1 = located(expr) {
-  Sequence( [e;e1] )
-}
+
+
 | v = vdefinition PVIRGULE e=located(expr) {
   Define(v,e)
 }
@@ -382,16 +389,20 @@ pattern :
   PTuple(p)
 }
 
+| p=located(pattern) BVERTICALE pp=located(pattern) {
+  POr(p ::[pp])
+}
+
+| p = located(pattern) DIS pp=located(pattern) {
+  PAnd(p::[pp])
+}
+
 | p=located(pattern) DPOINTS t = located(htype){
   PTypeAnnotation(p,t)
 }
 
-| p=located(pattern) BVERTICALE pp=located(pattern) {
-  POr(p ::[pp])
-}
-| p = located(pattern) DIS pp=located(pattern) {
-  PAnd(p::[pp])
-}
+
+
 
 | LPAR l = labelPatternList RPAR {
   PRecord(l,None)
