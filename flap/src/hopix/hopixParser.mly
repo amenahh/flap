@@ -19,6 +19,7 @@
 %token <int64> ENTIER
 %token <string> STRING
 %token <char> CHAR 
+%left PLUS
 
 %start<HopixAST.t> program
 %%
@@ -191,15 +192,15 @@ expr:
   Apply(e,e1)
 }
 
-| e = located(expr) b= located(binop) e1 = located(expr){
-  (*
-  Apply(Position.map (fun s -> Literal s) b,Apply(e,e1))
-      Apply(Literal(b),Apply(e,e1))
-      *)
+| e = located(expr) b =located(binop) e1 = located(expr){
+  
+  let x = 
+  Position.with_poss $startpos $endpos (Variable(b,None))
+  in
+   let y = Position.with_poss $startpos $endpos (Apply(e,x))
+  in
+  Apply(y,e1)
 
-   Apply((Position.with_poss $startpos $endpos (Literal(b))),Apply(e,e1))
-  
-  
 }
 
 
@@ -405,41 +406,76 @@ pattern :
   PTaggedValue(Position.map (fun v -> KId v) c, Some t,[])
 }
 
-
 binop :
-| located(PLUS) {
-  Position.map (fun s -> LString s) "+"
+| PLUS {
+  Id("+")
 }
-| located(MOINS) {
-  Position.map (fun s -> LString s) "-"
+| MOINS {
+  Id("-")
 }
-| located(STAR) {
-  Position.map (fun s -> LString s) "*"
+| STAR {
+  Id("*")
 }
-| located(DIV) {
-   Position.map (fun s -> LString s) "/"
+| DIV {
+   Id("/")
 }
-| located(OR) {
- Position.map (fun s -> LString s) "||"
+| OR {
+ Id("||")
 }
-| located(AND)  {
-  Position.map (fun s -> LString s) "&&"
+| AND {
+  Id("&&")
 }
-| located(EQ) {
-  Position.map (fun s -> LString s) "=?"
+| EQ {
+  Id("=?")
 }
-| located(LTE) {
-  Position.map (fun s -> LString s) "<=?"
+| LTE {
+  Id ("<=?")
 }
-| located(DRARROW) {
-  Position.map (fun s -> LString s) ">=?"
+| DRARROW {
+   Id(">=?")
 }
-| located(LT) {
- Position.map (fun s -> LString s) "<?"
+| LT {
+  Id("<?")
 }
-| located(GT) {
-  Position.map (fun s -> LString s) ">?"
+| GT {
+  Id(">?")
 }
+
+
+// binop :
+// | PLUS {
+//   Id("`+`")
+// }
+// | MOINS {
+//   Id("`-`")
+// }
+// | STAR {
+//   Id("`*`")
+// }
+// | DIV {
+//    Id("`/`")
+// }
+// | OR {
+//  Id("`||`")
+// }
+// | AND {
+//   Id("`&&`")
+// }
+// | EQ {
+//   Id("`=?`")
+// }
+// | LTE {
+//   Id ("`<=?`")
+// }
+// | DRARROW {
+//    Id("`>=?`")
+// }
+// | LT {
+//   Id("`<?`")
+// }
+// | GT {
+//   Id("`>?`")
+// }
 
 
 %inline located(X): x=X {
