@@ -38,9 +38,6 @@ definition:
 | TYPE type_con=located(IDENTIFICATEUR) EQUAL t=tdefinition {
     DefineType (Position.map (fun v -> TCon v) type_con,[],t)
 }
-| TYPE type_con=located(IDENTIFICATEUR) LCHEVRON tv = located(VARIABLE) RCHEVRON {
-  DefineType (Position.map (fun v -> TCon v) type_con,[Position.map (fun v -> TId v) tv],Abstract) 
-}
 | TYPE type_con= located(IDENTIFICATEUR) LCHEVRON tvl = typevarlist  RCHEVRON EQUAL t=tdefinition{
   DefineType (Position.map (fun v -> TCon v) type_con,tvl,t)
 }
@@ -48,9 +45,7 @@ definition:
   DefineType (Position.map (fun v -> TCon v) type_con,tvl,Abstract)
 }
 (*extern var_id : type_scheme*)
-
-
-| EXTERN var_id =located(IDENTIFICATEUR) ts = located(typeScheme) {
+| EXTERN var_id =located(IDENTIFICATEUR) DPOINTS ts = located(typeScheme) {
   DeclareExtern(Position.map (fun v -> Id v) var_id,ts)
 }
 
@@ -115,7 +110,7 @@ vdefinition:
   SimpleValue (Position.map (fun v -> Id v) var_id,Some ts,exp)
 }
 
-(* 
+(*
 | FUN fd = fundef {
   RecFunctions [(located ,)]
 }
@@ -305,7 +300,7 @@ htype :
 | LPAR t=htype RPAR {
   t
 }
-| t1=located(htype) tu = typeUplet{
+| t1=located(htype) tu = typeUplet {
   TyTuple (t1::tu)
 }
 | tv = VARIABLE {
