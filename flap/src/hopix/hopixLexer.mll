@@ -3,7 +3,6 @@
   open Error
   open Position
   open HopixParser
-  (* open Int64 *)
   open Mint
 
   let next_line_and f lexbuf  =
@@ -32,26 +31,30 @@ let minuscule = ['a'-'z']
 
 let majuscule = ['A'-'Z']
 
-let identificateur = minuscule (majuscule | minuscule | digit | '_')*  (* c ft *)
+let suite = (majuscule | minuscule | digit | '_')* 
 
-let variable = '`' identificateur (* c ft *)
+let identificateur = minuscule suite
 
-let constr_id = majuscule identificateur (*c ft*)
+let variable = '`' identificateur 
 
-let hexa = ['0'-'9' 'a'-'f''A'-'F']
+let constr_id = majuscule suite
 
-let entier = '-'? digit+ | "0x" hexa+ |  "0b" ['0'-'1']+ | "0o" ['0'-'7']+ (*c ft *)
+let hexa = ['0'-'9' 'a'-'f' 'A'-'F']
 
-let ascii = ['\000'-'\255']
+let entier = '-'? digit+ | "0x" hexa+ |  "0b" ['0'-'1']+ | "0o" ['0'-'7']+ 
 
-let simpleatom = '\\' | '\'' | '\n' | '\t' | '\b' | '\r' 
+(* let ascii = ['\000'-'\255'] *)
 
-let atom =  ascii | "Ox" hexa hexa | simpleatom
+(* let simpleatom = '\\' | '\'' | '\n' | '\t' | '\b' | '\r' 
 
-(*let string = '"' (atom|"'"| '\"')* '"' Obliger de faire une nouvelle regle pour ne pas capturer un '"' dans le string *)
+let atom =  ascii | "0x" hexa hexa | simpleatom
+
+let string = '"' (atom|"'"| '\"')* '"'  *)
+(* Obliger de faire une nouvelle regle pour ne pas capturer un '"' dans le string *)
 
 
 rule token = parse
+
   (** Layout *)
   | newline         { next_line_and token lexbuf }
   | blank+          { token lexbuf               }
@@ -91,6 +94,17 @@ rule token = parse
   | ","  { COMMA }
   | "."  { DOT }
   | ";"  { PVIRGULE }
+
+  | entier as e { 
+    let x =
+    try int_of_string e with 
+    | Failure _ -> error lexbuf "Integer literal too large."
+    in 
+    ENTIER( Mint.of_int x )
+  }  
+   | identificateur as ident { IDENTIFICATEUR(ident) }
+  | variable as v { VARIABLE(v) }
+  | constr_id as c { CONST_ID(c) }
   
   (* binop *)
   | "\\" { BACKSLASH }
@@ -116,34 +130,10 @@ rule token = parse
   
   | "!"  { EXCLAMATION }
   | "&&" { AND }
-  (* | "?"  { INTEROGATION } *)
   | "_"  { BHORIZONTALE }
 
 
   (* Litterals *)
-
-  (* | entier as e             { 
-    let x = Int64.to_int e in
-    if x < 2^63 -1 && x > (-2)^63 then ENTIER(Int64.of_string e)  
-    else error lexbuf "trop grand"  
-          } *)
-
-(* 
-  | entier as e             { 
-    let y = Mint.of_string e in
-    let x = Mint.to_int y in
-    ENTIER( Mint.of_int x )
-     } *)
-
-
-     | entier as e             { 
-    let y = Mint.of_string e in
-    let x =
-    try Mint.to_int y with 
-    | DoesNotFit -> error lexbuf ""
-    in ENTIER( Mint.of_int x )
-  }
-    (* ENTIER(Int64.of_string e)          } *)
   | "'\\n'"                 { CHAR '\n'                          }
   | "'\\t'"                 { CHAR '\t'                          }
   | "'\\''"                 { CHAR '\''                          }
@@ -166,9 +156,9 @@ rule token = parse
     else error lexbuf "Non printable char"
   }
 
-  | identificateur as ident { IDENTIFICATEUR(ident) }
+  (* | identificateur as ident { IDENTIFICATEUR(ident) }
   | variable as v { VARIABLE(v) }
-  | constr_id as c { CONST_ID(c) }
+  | constr_id as c { CONST_ID(c) } *)
 
 
   (** Lexing error. *)
@@ -203,8 +193,9 @@ and string = parse
   }
   | '"'   { let s = Buffer.contents string_buffer in
       Buffer.clear string_buffer;
-      STRING s}
+      STRING s
+  }
   | _ as c { 
       Buffer.add_char string_buffer c; string lexbuf 
   }
-  | eof   { error lexbuf "string is not closed."}
+  | eof   { error lexbuf "Unterminated string."}
