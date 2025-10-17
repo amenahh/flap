@@ -18,7 +18,6 @@
 // %token <Int64.t> ENTIER
 %token <Mint.t> ENTIER
 
-
 %token <string> STRING
 %token <char> CHAR 
 
@@ -156,12 +155,12 @@ expr_atomic:
   Variable ((Position.map (fun v -> Id v) var_id),None)
 }
 //mitigée
-|constr_id=located(CONST_ID) LPAR el = exprlist RPAR {
-  Tagged ((Position.map (fun v -> KId v) constr_id),None,el)
-}
-|constr_id=located(CONST_ID) LCHEVRON tl= typelist RCHEVRON LPAR el = exprlist RPAR{
-  Tagged ((Position.map (fun v -> KId v) constr_id),Some tl,el)
-}
+// |constr_id=located(CONST_ID) LPAR el = exprlist RPAR {
+//   Tagged ((Position.map (fun v -> KId v) constr_id),None,el)
+// }
+// |constr_id=located(CONST_ID) LCHEVRON tl= typelist RCHEVRON LPAR el = exprlist RPAR{
+//   Tagged ((Position.map (fun v -> KId v) constr_id),Some tl,el)
+// }
 
 // |constr_id=located(CONST_ID) LPAR el = atomic_list RPAR {
 //   Tagged ((Position.map (fun v -> KId v) constr_id),None,el)
@@ -230,6 +229,16 @@ expr:
 
 |ac = app_chaine { ac }
 
+// | e= located(expr) PLUS e1 = located(expr){
+//   let z = Position.with_poss $startpos $endpos (Id("`+`"))
+//   in
+//   let x = Position.with_poss $startpos $endpos (Variable(z,None))
+//   in
+//    let y = Position.with_poss $startpos $endpos (Apply(x,e1))
+//   in
+//   Apply(e,y)
+// }
+
 | e = located(expr) b =located(binop) e1 = located(expr){
   
   let x = 
@@ -240,17 +249,6 @@ expr:
   Apply(e,y)
 
 }
-
-// | e = located(expr_) b =located(binop) e1 = located(expr){
-  
-//   let x = 
-//   Position.with_poss $startpos $endpos (Variable(b,None))
-//   in
-//    let y = Position.with_poss $startpos $endpos (Apply(x,e1))
-//   in
-//   Apply(e,y)
-
-// }
 
 |LACC rl= recordlist RACC LCHEVRON tl=typelist RCHEVRON{
   Record(rl,Some tl)
@@ -286,6 +284,12 @@ expr:
   Fun(FunctionDefinition(p,e))
 }
 
+|constr_id=located(CONST_ID) LPAR el = exprlist RPAR {
+  Tagged ((Position.map (fun v -> KId v) constr_id),None,el)
+}
+|constr_id=located(CONST_ID) LCHEVRON tl= typelist RCHEVRON LPAR el = exprlist RPAR{
+  Tagged ((Position.map (fun v -> KId v) constr_id),Some tl,el)
+}
 
 recordlist:
 | label_id=located(IDENTIFICATEUR) EQUAL e=located(expr) COMMA rl=recordlist{
@@ -326,7 +330,7 @@ type_atomic :
 | tv = VARIABLE {
   TyVar (TId tv)
 }
-| LPAR t=htype RPAR {
+| LPAR t=htype RPAR { 
   t
 }
 |type_con=IDENTIFICATEUR {
@@ -350,10 +354,10 @@ htype :
 
 
 typeUplet : 
-| STAR t=located(htype) tu= typeUplet {
+| t=located(type_atomic) STAR tu= typeUplet {
   (t):: tu
 }
-| t=located(htype) {
+| t=located(type_atomic) {
     [t]
 }
 
