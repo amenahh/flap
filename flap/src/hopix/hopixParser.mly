@@ -100,33 +100,27 @@ tdefinitioniter:
   (Position.map (fun v -> KId v) constr_id,[])::td
 }
 
-
 vdefinition:
 | LET var_id=located(IDENTIFICATEUR) EQUAL exp=located(local_expr) {
   SimpleValue (Position.map (fun v -> Id v) var_id,None,exp)
 }
-
 | LET var_id=located(IDENTIFICATEUR) DPOINTS ts = located(typeScheme) EQUAL exp=located(local_expr){
   SimpleValue (Position.map (fun v -> Id v) var_id,Some ts,exp)
 }
-
-(*
-| FUN fd = fundef {
-  RecFunctions [(located ,)]
+| FUN fdl = separated_list(COMMA, fundef) {
+  RecFunctions fdl
 }
 
-| FUN fd = fundef lf = listfun {
-  RecFunctions (fd) 
+
+fundef:
+| var_id = located(IDENTIFICATEUR) p= located(pattern) EQUAL e=located(expr) {
+  ((Position.map (fun v -> Id v ) var_id),None,FunctionDefinition (p,e))
+}
+| DPOINTS ts = located(typeScheme) var_id = located(IDENTIFICATEUR) p= located(pattern) EQUAL e=located(expr) {
+  ((Position.map (fun v -> Id v ) var_id),Some ts,FunctionDefinition (p,e))
 }
 
-listfun: 
-| AND fd {
 
-}
-| AND fd lf = listfun {
-
-}
-*)
 expr_atomic:
 
 |i=located(ENTIER){
@@ -157,20 +151,7 @@ expr_atomic:
 |var_id=located(IDENTIFICATEUR) {
   Variable ((Position.map (fun v -> Id v) var_id),None)
 }
-//mitigée
-// |constr_id=located(CONST_ID) LPAR el = exprlist RPAR {
-//   Tagged ((Position.map (fun v -> KId v) constr_id),None,el)
-// }
-// |constr_id=located(CONST_ID) LCHEVRON tl= typelist RCHEVRON LPAR el = exprlist RPAR{
-//   Tagged ((Position.map (fun v -> KId v) constr_id),Some tl,el)
-// }
 
-// |constr_id=located(CONST_ID) LPAR el = atomic_list RPAR {
-//   Tagged ((Position.map (fun v -> KId v) constr_id),None,el)
-// }
-// |constr_id=located(CONST_ID) LCHEVRON tl= typelist RCHEVRON LPAR el = atomic_list RPAR{
-//   Tagged ((Position.map (fun v -> KId v) constr_id),Some tl,el)
-// }
 
 
 |constr_id=located(CONST_ID) LCHEVRON tl= typelist RCHEVRON {
@@ -180,13 +161,7 @@ expr_atomic:
   Tagged ((Position.map (fun v -> KId v) constr_id),None,[])
 }
 
-// atomic_list :
-// | e=located(expr_atomic) COMMA el=atomic_list {
-//   e::el
-// } 
-// | e=located(expr_atomic) {
-//   [e]
-// }
+
 
 
 
@@ -232,15 +207,7 @@ expr:
 
 |ac = app_chaine { ac }
 
-// | e= located(expr) PLUS e1 = located(expr){
-//   let z = Position.with_poss $startpos $endpos (Id("`+`"))
-//   in
-//   let x = Position.with_poss $startpos $endpos (Variable(z,None))
-//   in
-//    let y = Position.with_poss $startpos $endpos (Apply(x,e1))
-//   in
-//   Apply(e,y)
-// }
+
 
 | e = located(expr) b =located(binop) e1 = located(expr){
   
