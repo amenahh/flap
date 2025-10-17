@@ -211,12 +211,14 @@ expr:
 
 | e = located(expr) b =located(binop) e1 = located(expr){
   
+
+
   let x = 
-  Position.with_poss $startpos $endpos (Variable(b,None))
+  Position.with_poss $startpos $endpos (Variable(b,None)) 
   in
-   let y = Position.with_poss $startpos $endpos (Apply(x,e1))
+   let y = Position.with_poss $startpos $endpos (Apply(x,e))
   in
-  Apply(e,y)
+  Apply(y,e1) 
 
 }
 
@@ -446,13 +448,12 @@ pattern :
   PTaggedValue(Position.map (fun v -> KId v) c, Some t,[])
 }
 
-
-binop :
+binop: 
 | PLUS {
   Id("`+`")
 }
 | MOINS {
-  Id("`-`")
+  Id("`-`") 
 }
 | STAR {
   Id("`*`")
