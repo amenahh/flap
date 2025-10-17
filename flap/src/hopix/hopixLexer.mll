@@ -3,7 +3,8 @@
   open Error
   open Position
   open HopixParser
-  open Int64
+  (* open Int64 *)
+  open Mint
 
   let next_line_and f lexbuf  =
     Lexing.new_line lexbuf;
@@ -121,9 +122,28 @@ rule token = parse
 
   (* Litterals *)
 
+  (* | entier as e             { 
+    let x = Int64.to_int e in
+    if x < 2^63 -1 && x > (-2)^63 then ENTIER(Int64.of_string e)  
+    else error lexbuf "trop grand"  
+          } *)
+
+(* 
+  | entier as e             { 
+    let y = Mint.of_string e in
+    let x = Mint.to_int y in
+    ENTIER( Mint.of_int x )
+     } *)
 
 
-  | entier as e             { ENTIER(Int64.of_string e)          }
+     | entier as e             { 
+    let y = Mint.of_string e in
+    let x =
+    try Mint.to_int y with 
+    | DoesNotFit -> error lexbuf ""
+    in ENTIER( Mint.of_int x )
+  }
+    (* ENTIER(Int64.of_string e)          } *)
   | "'\\n'"                 { CHAR '\n'                          }
   | "'\\t'"                 { CHAR '\t'                          }
   | "'\\''"                 { CHAR '\''                          }
