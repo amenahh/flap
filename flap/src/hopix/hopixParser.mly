@@ -110,20 +110,23 @@ vdefinition:
   SimpleValue (Position.map (fun v -> Id v) var_id,Some ts,exp)
 }
 
-
-| FUN fdl = separated_list(COMMA, fundef) {
-  RecFunctions fdl
+(*
+| FUN fd = fundef {
+  RecFunctions [(located ,)]
 }
 
-
-fundef:
-| var_id = located(IDENTIFICATEUR) p= located(pattern) EQUAL e=located(expr) {
-  ((Position.map (fun v -> Id v ) var_id),None,FunctionDefinition (p,e))
-}
-| DPOINTS ts = located(typeScheme) var_id = located(IDENTIFICATEUR) p= located(pattern) EQUAL e=located(expr) {
-  ((Position.map (fun v -> Id v ) var_id),Some ts,FunctionDefinition (p,e))
+| FUN fd = fundef lf = listfun {
+  RecFunctions (fd) 
 }
 
+listfun: 
+| AND fd {
+
+}
+| AND fd lf = listfun {
+
+}
+*)
 expr_atomic:
 
 |i=located(ENTIER){
@@ -347,8 +350,7 @@ htype :
 | t1=located(htype) RARROW t2=located(htype) {
   TyArrow (t1,t2)
 }
-
-| t1=located(htype) tu = typeUplet {
+| t1=located(htype) STAR tu = typeUplet {
   TyTuple (t1::tu)
 }
 
