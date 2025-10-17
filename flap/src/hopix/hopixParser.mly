@@ -2,7 +2,7 @@
 
   open HopixAST
   open Position
-
+  open Mint
 
 %}
 
@@ -14,12 +14,12 @@
 %token <string> VARIABLE
 %token <string> CONST_ID
 %token <string> IDENTIFICATEUR
-// %token <string> ENTIER
-// %token INTEROGATION
-%token <int64> ENTIER
+// %token <int64> ENTIER
+// %token <Int64.t> ENTIER
+%token <Mint.t> ENTIER
+
 %token <string> STRING
 %token <char> CHAR 
-%left PLUS
 
 %start<HopixAST.t> program
 %%
@@ -100,34 +100,29 @@ tdefinitioniter:
   (Position.map (fun v -> KId v) constr_id,[])::td
 }
 
-
 vdefinition:
 | LET var_id=located(IDENTIFICATEUR) EQUAL exp=located(local_expr) {
   SimpleValue (Position.map (fun v -> Id v) var_id,None,exp)
 }
-
 | LET var_id=located(IDENTIFICATEUR) DPOINTS ts = located(typeScheme) EQUAL exp=located(local_expr){
   SimpleValue (Position.map (fun v -> Id v) var_id,Some ts,exp)
 }
-
-(*
-| FUN fd = fundef {
-  RecFunctions [(located ,)]
+| FUN fdl = separated_list(COMMA, fundef) {
+  RecFunctions fdl
 }
 
-| FUN fd = fundef lf = listfun {
-  RecFunctions (fd) 
+
+fundef:
+| var_id = located(IDENTIFICATEUR) p= located(pattern) EQUAL e=located(expr) {
+  ((Position.map (fun v -> Id v ) var_id),None,FunctionDefinition (p,e))
+}
+| DPOINTS ts = located(typeScheme) var_id = located(IDENTIFICATEUR) p= located(pattern) EQUAL e=located(expr) {
+  ((Position.map (fun v -> Id v ) var_id),Some ts,FunctionDefinition (p,e))
 }
 
-listfun: 
-| AND fd {
 
-}
-| AND fd lf = listfun {
-
-}
-*)
 expr_atomic:
+
 |i=located(ENTIER){
   Literal (Position.map (fun v -> LInt v) i )
 }
@@ -137,15 +132,114 @@ expr_atomic:
 |c=located(CHAR) {
   Literal   (Position.map (fun v -> LChar v) c )
 }
+|LPAR e=expr RPAR {
+  e
+}
 |LPAR RPAR {
   Tuple([])
 }
-|LPAR el=exprlist RPAR {
-  Tuple(el)
+
+|LPAR e=located(expr) COMMA el=exprlist RPAR {
+  Tuple(e::el)
 }
 | LPAR e1=located(expr) DPOINTS t=located(htype) RPAR {
   TypeAnnotation (e1,t)
 }
+|var_id=located(IDENTIFICATEUR) LCHEVRON tl = typelist RCHEVRON {
+  Variable ((Position.map (fun v -> Id v) var_id),Some tl)
+}
+|var_id=located(IDENTIFICATEUR) {
+  Variable ((Position.map (fun v -> Id v) var_id),None)
+}
+
+
+
+|constr_id=located(CONST_ID) LCHEVRON tl= typelist RCHEVRON {
+  Tagged ((Position.map (fun v -> KId v) constr_id),Some tl,[])
+}
+|constr_id=located(CONST_ID) {
+  Tagged ((Position.map (fun v -> KId v) constr_id),None,[])
+}
+
+
+
+
+
+
+app_chaine:
+
+| v = vdefinition PVIRGULE e=located(expr_atomic) {
+  Define(v,e)
+}
+
+| e=located(expr_atomic) DOT label_id=located(IDENTIFICATEUR) LCHEVRON t=typelist RCHEVRON {
+  Field(e,Position.map (fun v -> LId v) label_id, Some t)
+}
+| e=located(expr_atomic) DOT label_id=located(IDENTIFICATEUR) {
+  Field(e,Position.map (fun v -> LId v) label_id, None)
+}
+| e = located(expr_atomic) e1 = located(expr_atomic) {
+  Apply(e,e1)
+}
+
+| REF e= located(expr_atomic) {
+  Ref(e)
+}
+
+| EXCLAMATION e=located(expr_atomic) {
+  Read(e)
+}
+| e= located(expr_atomic) AFFECTATION e1 = located(expr_atomic) {
+  Assign(e,e1)
+}
+
+
+local_expr:                       
+  | el=located(local_expr) PVIRGULE e=located(expr) { 
+    Sequence( [el;e] )
+  }
+  | e=expr { e }   
+
+
+
+expr:
+|ea = expr_atomic { ea }
+
+|ac = app_chaine { ac }
+
+
+
+| e = located(expr) b =located(binop) e1 = located(expr){
+  
+  let x = 
+  Position.with_poss $startpos $endpos (Variable(b,None))
+  in
+   let y = Position.with_poss $startpos $endpos (Apply(x,e1))
+  in
+  Apply(e,y)
+
+}
+
+|LACC rl= recordlist RACC LCHEVRON tl=typelist RCHEVRON{
+  Record(rl,Some tl)
+}
+
+|LACC rl= recordlist RACC {
+  Record(rl,None)
+}
+
+| IF LPAR e1 = located(expr) RPAR THEN LACC e2 = located(expr) RACC ELSE LACC e3 = located(expr) RACC {
+  IfThenElse(e1,e2,e3)
+}
+
+| IF LPAR e1 = located(expr) RPAR THEN LACC e2 = located(expr) RACC {
+  IfThenElse(e1,e2,(Position.with_poss $startpos $endpos (Tuple([]))))
+}
+
+|WHILE LPAR e1=located(expr) RPAR LACC e2=located(expr) RACC {
+  While (e1,e2)
+}
+
 | MATCH LPAR e=located(expr) RPAR LACC b= branchList RACC {
   Case(e,b)
 }
@@ -156,61 +250,10 @@ expr_atomic:
   For (Position.map (fun v -> Id v) var_id,e1,e2,e3)
 }
 
-app_chaine:
-| e = located(expr_atomic) e1 = located(expr_atomic) {
-  Apply(e,e1)
+| BACKSLASH p=located(pattern) RARROW e = located(expr) {
+  Fun(FunctionDefinition(p,e))
 }
 
-local_expr:
-  | e=expr { e }                          
-  | el=located(local_expr) PVIRGULE e=located(expr) { 
-    Sequence( [el;e] )
-  }
-
-expr:
-|ea = expr_atomic { ea }
-
-| e=located(expr) DOT label_id=located(IDENTIFICATEUR) LCHEVRON t=typelist RCHEVRON {
-  Field(e,Position.map (fun v -> LId v) label_id, Some t)
-}
-| e=located(expr) DOT label_id=located(IDENTIFICATEUR) {
-  Field(e,Position.map (fun v -> LId v) label_id, None)
-}
-
-
-|LACC rl= recordlist RACC {
-  Record(rl,None)
-}
-|LACC rl= recordlist RACC LCHEVRON tl=typelist RCHEVRON{
-  Record(rl,Some tl)
-}
-
-
-| IF LPAR e1 = located(expr) RPAR THEN LACC e2 = located(expr) RACC ELSE LACC e3 = located(expr) RACC {
-  IfThenElse(e1,e2,e3)
-}
-|WHILE LPAR e1=located(expr) RPAR LACC e2=located(expr) RACC {
-  While (e1,e2)
-}
-
-|ac = app_chaine { ac }
-| IF LPAR e1 = located(expr) RPAR THEN LACC e2 = located(expr) RACC {
-  IfThenElse(e1,e2,(Position.with_poss $startpos $endpos (Tuple([]))))
-}
-
-
-|var_id=located(IDENTIFICATEUR) {
-  Variable ((Position.map (fun v -> Id v) var_id),None)
-}
-|var_id=located(IDENTIFICATEUR) LCHEVRON tl = typelist RCHEVRON {
-  Variable ((Position.map (fun v -> Id v) var_id),Some tl)
-}
-|constr_id=located(CONST_ID) {
-  Tagged ((Position.map (fun v -> KId v) constr_id),None,[])
-}
-|constr_id=located(CONST_ID) LCHEVRON tl= typelist RCHEVRON {
-  Tagged ((Position.map (fun v -> KId v) constr_id),Some tl,[])
-}
 |constr_id=located(CONST_ID) LPAR el = exprlist RPAR {
   Tagged ((Position.map (fun v -> KId v) constr_id),None,el)
 }
@@ -218,60 +261,26 @@ expr:
   Tagged ((Position.map (fun v -> KId v) constr_id),Some tl,el)
 }
 
-| v = vdefinition PVIRGULE e=located(expr) {
-  Define(v,e)
-}
-
-| e = located(expr) b =located(binop) e1 = located(expr){
-  
-  let x = 
-  Position.with_poss $startpos $endpos (Variable(b,None))
-  in
-   let y = Position.with_poss $startpos $endpos (Apply(e,x))
-  in
-  Apply(y,e1)
-
-}
-
-
-| e= located(expr) AFFECTATION e1 = located(expr) {
-  Assign(e,e1)
-}
-
-| BACKSLASH p=located(pattern) RARROW e = located(expr) {
-  Fun(FunctionDefinition(p,e))
-}
-
-
-| REF e= located(expr) {
-  Ref(e)
-}
-
-| EXCLAMATION e=located(expr) {
-  Read(e)
-}
-
-
 recordlist:
-| label_id=located(IDENTIFICATEUR) EQUAL e=located(expr){
-  [(Position.map (fun v -> LId v) label_id,e)]
-}
 | label_id=located(IDENTIFICATEUR) EQUAL e=located(expr) COMMA rl=recordlist{
   (Position.map (fun v -> LId v) label_id,e)::rl
 }
+| label_id=located(IDENTIFICATEUR) EQUAL e=located(expr){
+  [(Position.map (fun v -> LId v) label_id,e)]
+}
 
 branchList :
-| BVERTICALE b = located(branche) {
-  [b]
-}
 | BVERTICALE b = located(branche) BVERTICALE l=branchList {
   b::l
 }
-| b = located(branche) {
+| BVERTICALE b = located(branche) {
   [b]
 }
 | b = located(branche) BVERTICALE l=branchList {
   b::l
+}
+| b = located(branche) {
+  [b]
 }
 
 branche:
@@ -280,16 +289,27 @@ branche:
 }
 
 exprlist:
-| e=located(expr) {
-  [e]
-}
 | e=located(expr) COMMA el=exprlist {
   e::el
 } 
+| e=located(expr) {
+  [e]
+}
 
-htype : 
+type_atomic :
+| tv = VARIABLE {
+  TyVar (TId tv)
+}
+| LPAR t=htype RPAR { 
+  t
+}
 |type_con=IDENTIFICATEUR {
   TyCon (TCon type_con,[])
+}
+
+htype : 
+| t=type_atomic {
+  t
 }
 |type_con=IDENTIFICATEUR LCHEVRON tl=typelist RCHEVRON {
   TyCon (TCon type_con,tl)
@@ -297,23 +317,17 @@ htype :
 | t1=located(htype) RARROW t2=located(htype) {
   TyArrow (t1,t2)
 }
-| LPAR t=htype RPAR {
-  t
-}
-| t1=located(htype) tu = typeUplet {
+| t1=located(htype) STAR tu = typeUplet {
   TyTuple (t1::tu)
-}
-| tv = VARIABLE {
-  TyVar (TId tv)
 }
 
 
 typeUplet : 
-| STAR t=located(htype) {
-    [t]
-}
-| t=located(htype) STAR tu= typeUplet {
+| t=located(type_atomic) STAR tu= typeUplet {
   (t):: tu
+}
+| t=located(type_atomic) {
+    [t]
 }
 
 
@@ -346,26 +360,16 @@ typeScheme :
 
 
 labelPatternList :
+| id = located(IDENTIFICATEUR) EQUAL p = located(pattern) COMMA l=labelPatternList {
+  (Position.map (fun v -> LId v) id ,p) :: l
+}
 | id = located(IDENTIFICATEUR) EQUAL p = located(pattern) {
   [Position.map (fun v -> LId v) id, p]
 }
 
-| id = located(IDENTIFICATEUR) EQUAL p = located(pattern) COMMA l=labelPatternList {
-  (Position.map (fun v -> LId v) id ,p) :: l
-}
 
-
-listPattern :
-| p=located(pattern) {
-  [p]
-}
-| p=located(pattern) COMMA l=listPattern{
-  p :: l
-}
-
-pattern :
+pattern_atomic :
 | i = located(IDENTIFICATEUR) {
-  (*PVariable(i)*)
   PVariable(Position.map (fun i -> Id i) i)
 }
 | BHORIZONTALE {
@@ -381,14 +385,29 @@ pattern :
 
 | c =located(CHAR) {
   PLiteral(   Position.map (fun c -> LChar c) c)
-
 }
 
-
-| LPAR RPAR {PTuple([])}
+| LPAR RPAR {
+  PTuple([])
+}
 
 | LPAR p=listPattern RPAR {
   PTuple(p)
+}
+
+
+listPattern :
+| p=located(pattern) COMMA l=listPattern{
+  p :: l
+}
+| p=located(pattern) {
+  [p]
+}
+
+
+pattern :
+| p=pattern_atomic {
+  p
 }
 
 | p=located(pattern) BVERTICALE pp=located(pattern) {
@@ -403,9 +422,6 @@ pattern :
   PTypeAnnotation(p,t)
 }
 
-
-
-
 | LPAR l = labelPatternList RPAR {
   PRecord(l,None)
 }
@@ -413,7 +429,6 @@ pattern :
 | LPAR l = labelPatternList RPAR LCHEVRON t=typelist RCHEVRON {
   PRecord( l,Some t)
 }
-
 
 | c = located(CONST_ID) LCHEVRON t=typelist RCHEVRON LPAR l = listPattern RPAR {
   PTaggedValue(Position.map (fun v -> KId v) c, Some t,l)
@@ -431,40 +446,42 @@ pattern :
   PTaggedValue(Position.map (fun v -> KId v) c, Some t,[])
 }
 
+
 binop :
 | PLUS {
-  Id("+")
+  Id("`+`")
 }
 | MOINS {
-  Id("-")
+  Id("`-`")
 }
 | STAR {
-  Id("*")
+  Id("`*`")
 }
 | DIV {
-   Id("/")
+   Id("`/`")
 }
 | OR {
- Id("||")
+ Id("`||`")
 }
 | AND {
-  Id("&&")
+  Id("`&&`")
 }
 | EQ {
-  Id("=?")
+  Id("`=?`")
 }
 | LTE {
-  Id ("<=?")
+  Id ("`<=?`")
 }
 | DRARROW {
-   Id(">=?")
+   Id("`>=?`")
 }
 | LT {
-  Id("<?")
+  Id("`<?`")
 }
 | GT {
-  Id(">?")
+  Id("`>?`")
 }
+
 
 
 // binop :
@@ -506,4 +523,3 @@ binop :
 %inline located(X): x=X {
   Position.with_poss $startpos $endpos x
 }
-
