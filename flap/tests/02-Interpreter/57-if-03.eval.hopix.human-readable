@@ -1,0 +1,9 @@
+fun f (x) =
+  if (x >? 0) then { "KO" }
+  else { if (x <? 0) then { "KO" }
+  else { "OK" } }
+
+let test =
+  print_string ("This test is ");
+  print_string (f (0));
+  print_string (".\n")

@@ -1,0 +1,242 @@
+
+\documentclass{article}
+\usepackage{fancyvrb}
+\usepackage{color}
+\usepackage[utf8]{inputenc}
+
+
+
+\makeatletter
+\def\PY@reset{\let\PY@it=\relax \let\PY@bf=\relax%
+    \let\PY@ul=\relax \let\PY@tc=\relax%
+    \let\PY@bc=\relax \let\PY@ff=\relax}
+\def\PY@tok#1{\csname PY@tok@#1\endcsname}
+\def\PY@toks#1+{\ifx\relax#1\empty\else%
+    \PY@tok{#1}\expandafter\PY@toks\fi}
+\def\PY@do#1{\PY@bc{\PY@tc{\PY@ul{%
+    \PY@it{\PY@bf{\PY@ff{#1}}}}}}}
+\def\PY#1#2{\PY@reset\PY@toks#1+\relax+\PY@do{#2}}
+
+\@namedef{PY@tok@w}{\def\PY@tc##1{\textcolor[rgb]{0.73,0.73,0.73}{##1}}}
+\@namedef{PY@tok@c}{\let\PY@it=\textit\def\PY@tc##1{\textcolor[rgb]{0.24,0.48,0.48}{##1}}}
+\@namedef{PY@tok@cp}{\def\PY@tc##1{\textcolor[rgb]{0.61,0.40,0.00}{##1}}}
+\@namedef{PY@tok@k}{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\@namedef{PY@tok@kp}{\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\@namedef{PY@tok@kt}{\def\PY@tc##1{\textcolor[rgb]{0.69,0.00,0.25}{##1}}}
+\@namedef{PY@tok@o}{\def\PY@tc##1{\textcolor[rgb]{0.40,0.40,0.40}{##1}}}
+\@namedef{PY@tok@ow}{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.67,0.13,1.00}{##1}}}
+\@namedef{PY@tok@nb}{\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\@namedef{PY@tok@nf}{\def\PY@tc##1{\textcolor[rgb]{0.00,0.00,1.00}{##1}}}
+\@namedef{PY@tok@nc}{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.00,1.00}{##1}}}
+\@namedef{PY@tok@nn}{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.00,1.00}{##1}}}
+\@namedef{PY@tok@ne}{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.80,0.25,0.22}{##1}}}
+\@namedef{PY@tok@nv}{\def\PY@tc##1{\textcolor[rgb]{0.10,0.09,0.49}{##1}}}
+\@namedef{PY@tok@no}{\def\PY@tc##1{\textcolor[rgb]{0.53,0.00,0.00}{##1}}}
+\@namedef{PY@tok@nl}{\def\PY@tc##1{\textcolor[rgb]{0.46,0.46,0.00}{##1}}}
+\@namedef{PY@tok@ni}{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.44,0.44,0.44}{##1}}}
+\@namedef{PY@tok@na}{\def\PY@tc##1{\textcolor[rgb]{0.41,0.47,0.13}{##1}}}
+\@namedef{PY@tok@nt}{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\@namedef{PY@tok@nd}{\def\PY@tc##1{\textcolor[rgb]{0.67,0.13,1.00}{##1}}}
+\@namedef{PY@tok@s}{\def\PY@tc##1{\textcolor[rgb]{0.73,0.13,0.13}{##1}}}
+\@namedef{PY@tok@sd}{\let\PY@it=\textit\def\PY@tc##1{\textcolor[rgb]{0.73,0.13,0.13}{##1}}}
+\@namedef{PY@tok@si}{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.64,0.35,0.47}{##1}}}
+\@namedef{PY@tok@se}{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.67,0.36,0.12}{##1}}}
+\@namedef{PY@tok@sr}{\def\PY@tc##1{\textcolor[rgb]{0.64,0.35,0.47}{##1}}}
+\@namedef{PY@tok@ss}{\def\PY@tc##1{\textcolor[rgb]{0.10,0.09,0.49}{##1}}}
+\@namedef{PY@tok@sx}{\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\@namedef{PY@tok@m}{\def\PY@tc##1{\textcolor[rgb]{0.40,0.40,0.40}{##1}}}
+\@namedef{PY@tok@gh}{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.00,0.50}{##1}}}
+\@namedef{PY@tok@gu}{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.50,0.00,0.50}{##1}}}
+\@namedef{PY@tok@gd}{\def\PY@tc##1{\textcolor[rgb]{0.63,0.00,0.00}{##1}}}
+\@namedef{PY@tok@gi}{\def\PY@tc##1{\textcolor[rgb]{0.00,0.52,0.00}{##1}}}
+\@namedef{PY@tok@gr}{\def\PY@tc##1{\textcolor[rgb]{0.89,0.00,0.00}{##1}}}
+\@namedef{PY@tok@ge}{\let\PY@it=\textit}
+\@namedef{PY@tok@gs}{\let\PY@bf=\textbf}
+\@namedef{PY@tok@ges}{\let\PY@bf=\textbf\let\PY@it=\textit}
+\@namedef{PY@tok@gp}{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.00,0.50}{##1}}}
+\@namedef{PY@tok@go}{\def\PY@tc##1{\textcolor[rgb]{0.44,0.44,0.44}{##1}}}
+\@namedef{PY@tok@gt}{\def\PY@tc##1{\textcolor[rgb]{0.00,0.27,0.87}{##1}}}
+\@namedef{PY@tok@err}{\def\PY@bc##1{{\setlength{\fboxsep}{\string -\fboxrule}\fcolorbox[rgb]{1.00,0.00,0.00}{1,1,1}{\strut ##1}}}}
+\@namedef{PY@tok@kc}{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\@namedef{PY@tok@kd}{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\@namedef{PY@tok@kn}{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\@namedef{PY@tok@kr}{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\@namedef{PY@tok@bp}{\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\@namedef{PY@tok@fm}{\def\PY@tc##1{\textcolor[rgb]{0.00,0.00,1.00}{##1}}}
+\@namedef{PY@tok@vc}{\def\PY@tc##1{\textcolor[rgb]{0.10,0.09,0.49}{##1}}}
+\@namedef{PY@tok@vg}{\def\PY@tc##1{\textcolor[rgb]{0.10,0.09,0.49}{##1}}}
+\@namedef{PY@tok@vi}{\def\PY@tc##1{\textcolor[rgb]{0.10,0.09,0.49}{##1}}}
+\@namedef{PY@tok@vm}{\def\PY@tc##1{\textcolor[rgb]{0.10,0.09,0.49}{##1}}}
+\@namedef{PY@tok@sa}{\def\PY@tc##1{\textcolor[rgb]{0.73,0.13,0.13}{##1}}}
+\@namedef{PY@tok@sb}{\def\PY@tc##1{\textcolor[rgb]{0.73,0.13,0.13}{##1}}}
+\@namedef{PY@tok@sc}{\def\PY@tc##1{\textcolor[rgb]{0.73,0.13,0.13}{##1}}}
+\@namedef{PY@tok@dl}{\def\PY@tc##1{\textcolor[rgb]{0.73,0.13,0.13}{##1}}}
+\@namedef{PY@tok@s2}{\def\PY@tc##1{\textcolor[rgb]{0.73,0.13,0.13}{##1}}}
+\@namedef{PY@tok@sh}{\def\PY@tc##1{\textcolor[rgb]{0.73,0.13,0.13}{##1}}}
+\@namedef{PY@tok@s1}{\def\PY@tc##1{\textcolor[rgb]{0.73,0.13,0.13}{##1}}}
+\@namedef{PY@tok@mb}{\def\PY@tc##1{\textcolor[rgb]{0.40,0.40,0.40}{##1}}}
+\@namedef{PY@tok@mf}{\def\PY@tc##1{\textcolor[rgb]{0.40,0.40,0.40}{##1}}}
+\@namedef{PY@tok@mh}{\def\PY@tc##1{\textcolor[rgb]{0.40,0.40,0.40}{##1}}}
+\@namedef{PY@tok@mi}{\def\PY@tc##1{\textcolor[rgb]{0.40,0.40,0.40}{##1}}}
+\@namedef{PY@tok@il}{\def\PY@tc##1{\textcolor[rgb]{0.40,0.40,0.40}{##1}}}
+\@namedef{PY@tok@mo}{\def\PY@tc##1{\textcolor[rgb]{0.40,0.40,0.40}{##1}}}
+\@namedef{PY@tok@ch}{\let\PY@it=\textit\def\PY@tc##1{\textcolor[rgb]{0.24,0.48,0.48}{##1}}}
+\@namedef{PY@tok@cm}{\let\PY@it=\textit\def\PY@tc##1{\textcolor[rgb]{0.24,0.48,0.48}{##1}}}
+\@namedef{PY@tok@cpf}{\let\PY@it=\textit\def\PY@tc##1{\textcolor[rgb]{0.24,0.48,0.48}{##1}}}
+\@namedef{PY@tok@c1}{\let\PY@it=\textit\def\PY@tc##1{\textcolor[rgb]{0.24,0.48,0.48}{##1}}}
+\@namedef{PY@tok@cs}{\let\PY@it=\textit\def\PY@tc##1{\textcolor[rgb]{0.24,0.48,0.48}{##1}}}
+
+\def\PYZbs{\char`\\}
+\def\PYZus{\char`\_}
+\def\PYZob{\char`\{}
+\def\PYZcb{\char`\}}
+\def\PYZca{\char`\^}
+\def\PYZam{\char`\&}
+\def\PYZlt{\char`\<}
+\def\PYZgt{\char`\>}
+\def\PYZsh{\char`\#}
+\def\PYZpc{\char`\%}
+\def\PYZdl{\char`\$}
+\def\PYZhy{\char`\-}
+\def\PYZsq{\char`\'}
+\def\PYZdq{\char`\"}
+\def\PYZti{\char`\~}
+% for compatibility with earlier versions
+\def\PYZat{@}
+\def\PYZlb{[}
+\def\PYZrb{]}
+\makeatother
+
+
+\begin{document}
+
+\section*{}
+
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{k}{type} \PY{n}{t} \PY{o}{=}
+  \PY{o}{|} \PY{n+nc}{Var} \PY{k}{of} \PY{n+nn}{Id}\PY{p}{.}\PY{n}{t}
+  \PY{o}{|} \PY{n+nc}{Lit} \PY{k}{of} \PY{k+kt}{int}
+  \PY{o}{|} \PY{n+nc}{Add} \PY{k}{of} \PY{n}{t} \PY{o}{*} \PY{n}{t}
+  \PY{o}{|} \PY{n+nc}{Let} \PY{k}{of} \PY{n}{t} \PY{o}{*} \PY{n}{bound1}
+
+\PY{o+ow}{and} \PY{n}{bound1} \PY{o}{=} \PY{n+nc}{B} \PY{k}{of} \PY{n+nn}{Id}\PY{p}{.}\PY{n}{t} \PY{o}{*} \PY{n}{t}
+
+\PY{k}{let} \PY{k}{rec} \PY{n}{pp} \PY{n}{ff} \PY{o}{=} \PY{k}{function}
+  \PY{o}{|} \PY{n+nc}{Var} \PY{n}{x} \PY{o}{\PYZhy{}\PYZgt{}}
+     \PY{n+nn}{Id}\PY{p}{.}\PY{n}{pp} \PY{n}{ff} \PY{n}{x}
+  \PY{o}{|} \PY{n+nc}{Lit} \PY{n}{n} \PY{o}{\PYZhy{}\PYZgt{}}
+     \PY{n+nn}{Format}\PY{p}{.}\PY{n}{fprintf} \PY{n}{ff} \PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{\PYZpc{}d}\PY{l+s+s2}{\PYZdq{}} \PY{n}{n}
+  \PY{o}{|} \PY{n+nc}{Add} \PY{o}{(}\PY{n}{e1}\PY{o}{,} \PY{n}{e2}\PY{o}{)} \PY{o}{\PYZhy{}\PYZgt{}}
+     \PY{n+nn}{Format}\PY{p}{.}\PY{n}{fprintf} \PY{n}{ff} \PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{add(@[@[\PYZpc{}a@],@ @[\PYZpc{}a@]@])}\PY{l+s+s2}{\PYZdq{}}
+       \PY{n}{pp} \PY{n}{e1}
+       \PY{n}{pp} \PY{n}{e2}
+  \PY{o}{|} \PY{n+nc}{Let} \PY{o}{(}\PY{n}{e1}\PY{o}{,} \PY{n}{e2}\PY{o}{)} \PY{o}{\PYZhy{}\PYZgt{}}
+     \PY{n+nn}{Format}\PY{p}{.}\PY{n}{fprintf} \PY{n}{ff} \PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{let(@[@[\PYZpc{}a@],@ @[\PYZpc{}a@]@])}\PY{l+s+s2}{\PYZdq{}}
+       \PY{n}{pp} \PY{n}{e1}
+       \PY{n}{pp\PYZus{}bound1} \PY{n}{e2}
+
+\PY{o+ow}{and} \PY{n}{pp\PYZus{}bound1} \PY{n}{ff} \PY{o}{(}\PY{n+nc}{B} \PY{o}{(}\PY{n}{x}\PY{o}{,} \PY{n}{e}\PY{o}{)}\PY{o}{)}  \PY{o}{=}
+  \PY{n+nn}{Format}\PY{p}{.}\PY{n}{fprintf} \PY{n}{ff} \PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{@[\PYZpc{}a.@,@[\PYZpc{}a@]@]}\PY{l+s+s2}{\PYZdq{}}
+    \PY{n+nn}{Id}\PY{p}{.}\PY{n}{pp} \PY{n}{x}
+    \PY{n}{pp} \PY{n}{e}
+
+\PY{k}{let} \PY{n}{pp\PYZus{}substitution} \PY{n}{ff} \PY{n}{xs} \PY{o}{=}
+  \PY{n+nn}{Fmt}\PY{p}{.}\PY{n}{list} \PY{o}{\PYZti{}}\PY{n}{sep}\PY{o}{:}\PY{n+nn}{Fmt}\PY{p}{.}\PY{n}{comma}
+    \PY{o}{(}\PY{k}{fun} \PY{n}{ff} \PY{o}{(}\PY{n}{x}\PY{o}{,} \PY{n}{e}\PY{o}{)} \PY{o}{\PYZhy{}\PYZgt{}}
+      \PY{n+nn}{Format}\PY{p}{.}\PY{n}{fprintf} \PY{n}{ff} \PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{\PYZpc{}a}\PY{l+s+se}{\PYZbs{}\PYZbs{}}\PY{l+s+s2}{@[\PYZpc{}a@]}\PY{l+s+s2}{\PYZdq{}} \PY{n+nn}{Id}\PY{p}{.}\PY{n}{pp} \PY{n}{x} \PY{n}{pp} \PY{n}{e}\PY{o}{)}
+    \PY{n}{ff} \PY{n}{xs}
+
+\PY{k}{module} \PY{n+nc}{Builder} \PY{o}{=} \PY{k}{struct}
+  \PY{k}{let} \PY{n}{v} \PY{n}{x} \PY{o}{=} \PY{n+nc}{Var} \PY{n}{x}
+  \PY{k}{let} \PY{n}{l} \PY{n}{i} \PY{o}{=} \PY{n+nc}{Lit} \PY{n}{i}
+  \PY{k}{let} \PY{o}{(} \PY{o}{+} \PY{o}{)} \PY{n}{e1} \PY{n}{e2} \PY{o}{=} \PY{n+nc}{Add} \PY{o}{(}\PY{n}{e1}\PY{o}{,} \PY{n}{e2}\PY{o}{)}
+  \PY{k}{let} \PY{o}{(} \PY{k}{let}\PY{o}{*} \PY{o}{)} \PY{n}{e1} \PY{n}{mk\PYZus{}e2} \PY{o}{=} \PY{k}{let} \PY{n}{x} \PY{o}{=} \PY{n+nn}{Id}\PY{p}{.}\PY{n}{fresh} \PY{n+nb+bp}{()} \PY{k}{in} \PY{n+nc}{Let} \PY{o}{(}\PY{n}{e1}\PY{o}{,} \PY{n+nc}{B} \PY{o}{(}\PY{n}{x}\PY{o}{,} \PY{n}{mk\PYZus{}e2} \PY{o}{(}\PY{n+nc}{Var} \PY{n}{x}\PY{o}{)}\PY{o}{)}\PY{o}{)}
+\PY{k}{end}
+
+\PY{k}{let} \PY{k}{rec} \PY{n}{subst} \PY{n}{s} \PY{o}{=} \PY{k}{function}
+  \PY{o}{|} \PY{n+nc}{Var} \PY{n}{x} \PY{o}{\PYZhy{}\PYZgt{}}
+     \PY{k}{begin} \PY{k}{try} \PY{n+nn}{Id}\PY{p}{.}\PY{n}{assoc} \PY{n}{x} \PY{n}{s} \PY{k}{with} \PY{n+nc}{Not\PYZus{}found} \PY{o}{\PYZhy{}\PYZgt{}} \PY{n+nc}{Var} \PY{n}{x} \PY{k}{end}
+  \PY{o}{|} \PY{n+nc}{Lit} \PY{n}{k} \PY{o}{\PYZhy{}\PYZgt{}}
+     \PY{n+nc}{Lit} \PY{n}{k}
+  \PY{o}{|} \PY{n+nc}{Add} \PY{o}{(}\PY{n}{e1}\PY{o}{,} \PY{n}{e2}\PY{o}{)} \PY{o}{\PYZhy{}\PYZgt{}}
+     \PY{n+nc}{Add} \PY{o}{(}\PY{n}{subst} \PY{n}{s} \PY{n}{e1}\PY{o}{,} \PY{n}{subst} \PY{n}{s} \PY{n}{e2}\PY{o}{)}
+  \PY{o}{|} \PY{n+nc}{Let} \PY{o}{(}\PY{n}{e1}\PY{o}{,} \PY{n}{e2}\PY{o}{)} \PY{o}{\PYZhy{}\PYZgt{}}
+     \PY{n+nc}{Let} \PY{o}{(}\PY{n}{subst} \PY{n}{s} \PY{n}{e1}\PY{o}{,} \PY{n}{subst\PYZus{}bound1} \PY{n}{s} \PY{n}{e2}\PY{o}{)}
+
+\PY{o+ow}{and} \PY{n}{subst\PYZus{}bound1} \PY{n}{s} \PY{o}{(}\PY{n+nc}{B} \PY{o}{(}\PY{n}{x}\PY{o}{,} \PY{n}{e}\PY{o}{)}\PY{o}{)} \PY{o}{=}
+  \PY{k}{let} \PY{n}{x\PYZsq{}} \PY{o}{=} \PY{n+nn}{Id}\PY{p}{.}\PY{n}{fresh} \PY{n+nb+bp}{()} \PY{k}{in}
+  \PY{n+nc}{B} \PY{o}{(}\PY{n}{x\PYZsq{}}\PY{o}{,} \PY{n}{subst} \PY{o}{(}\PY{n+nn}{Id}\PY{p}{.}\PY{n}{extend} \PY{n}{x} \PY{o}{(}\PY{n+nc}{Var} \PY{n}{x\PYZsq{}}\PY{o}{)} \PY{n}{s}\PY{o}{)} \PY{n}{e}\PY{o}{)}
+
+\PY{o+ow}{and} \PY{n}{compose} \PY{n}{s1} \PY{n}{s2} \PY{o}{=}
+  \PY{k}{match} \PY{n}{s1} \PY{k}{with}
+  \PY{o}{|} \PY{n+nb+bp}{[]} \PY{o}{\PYZhy{}\PYZgt{}} \PY{n}{s2}
+  \PY{o}{|} \PY{o}{(}\PY{n}{x}\PY{o}{,} \PY{n}{t}\PY{o}{)} \PY{o}{::} \PY{n}{s1} \PY{o}{\PYZhy{}\PYZgt{}} \PY{o}{(}\PY{n}{x}\PY{o}{,} \PY{n}{subst} \PY{n}{s2} \PY{n}{t}\PY{o}{)} \PY{o}{::} \PY{n}{compose} \PY{n}{s1} \PY{n}{s2}
+
+\PY{k}{let} \PY{k}{rec} \PY{n}{equal} \PY{n}{e} \PY{n}{e\PYZsq{}} \PY{o}{=}
+  \PY{k}{match} \PY{n}{e}\PY{o}{,} \PY{n}{e\PYZsq{}} \PY{k}{with}
+  \PY{o}{|} \PY{n+nc}{Var} \PY{n}{x}\PY{o}{,} \PY{n+nc}{Var} \PY{n}{x\PYZsq{}} \PY{o}{\PYZhy{}\PYZgt{}}
+     \PY{n}{x} \PY{o}{=} \PY{n}{x\PYZsq{}}
+  \PY{o}{|} \PY{n+nc}{Lit} \PY{n}{i}\PY{o}{,} \PY{n+nc}{Lit} \PY{n}{i\PYZsq{}} \PY{o}{\PYZhy{}\PYZgt{}}
+     \PY{n}{i} \PY{o}{=} \PY{n}{i\PYZsq{}}
+  \PY{o}{|} \PY{n+nc}{Add} \PY{o}{(}\PY{n}{e1}\PY{o}{,} \PY{n}{e2}\PY{o}{)}\PY{o}{,} \PY{n+nc}{Add} \PY{o}{(}\PY{n}{e1\PYZsq{}}\PY{o}{,} \PY{n}{e2\PYZsq{}}\PY{o}{)} \PY{o}{\PYZhy{}\PYZgt{}}
+     \PY{n}{equal} \PY{n}{e1} \PY{n}{e1\PYZsq{}} \PY{o}{\PYZam{}\PYZam{}} \PY{n}{equal} \PY{n}{e2} \PY{n}{e2\PYZsq{}}
+  \PY{o}{|} \PY{n+nc}{Let} \PY{o}{(}\PY{n}{e1}\PY{o}{,} \PY{n}{e2}\PY{o}{)}\PY{o}{,} \PY{n+nc}{Let} \PY{o}{(}\PY{n}{e1\PYZsq{}}\PY{o}{,} \PY{n}{e2\PYZsq{}}\PY{o}{)} \PY{o}{\PYZhy{}\PYZgt{}}
+     \PY{n}{equal} \PY{n}{e1} \PY{n}{e1\PYZsq{}} \PY{o}{\PYZam{}\PYZam{}} \PY{n}{equal\PYZus{}bound1} \PY{n}{e2} \PY{n}{e2\PYZsq{}}
+  \PY{o}{|} \PY{o}{\PYZus{}} \PY{o}{\PYZhy{}\PYZgt{}}
+     \PY{n+nb+bp}{false}
+
+\PY{o+ow}{and} \PY{n}{equal\PYZus{}bound1} \PY{o}{(}\PY{n+nc}{B} \PY{o}{(}\PY{n}{x}\PY{o}{,} \PY{n}{e}\PY{o}{)}\PY{o}{)} \PY{o}{(}\PY{n+nc}{B} \PY{o}{(}\PY{n}{x\PYZsq{}}\PY{o}{,} \PY{n}{e\PYZsq{}}\PY{o}{)}\PY{o}{)} \PY{o}{=}
+  \PY{k}{let} \PY{n}{y} \PY{o}{=} \PY{n+nn}{Id}\PY{p}{.}\PY{n}{fresh} \PY{n+nb+bp}{()} \PY{k}{in}
+  \PY{n}{equal}
+    \PY{o}{(}\PY{n}{subst} \PY{n+nn}{Id}\PY{p}{.}\PY{o}{(}\PY{n}{singleton} \PY{n}{x} \PY{o}{(}\PY{n+nc}{Var} \PY{n}{y}\PY{o}{)}\PY{o}{)} \PY{n}{e}\PY{o}{)}
+    \PY{o}{(}\PY{n}{subst} \PY{n+nn}{Id}\PY{p}{.}\PY{o}{(}\PY{n}{singleton} \PY{n}{x\PYZsq{}} \PY{o}{(}\PY{n+nc}{Var} \PY{n}{y}\PY{o}{)}\PY{o}{)} \PY{n}{e\PYZsq{}}\PY{o}{)}
+
+\PY{o+ow}{and} \PY{n}{equal\PYZus{}subst} \PY{n}{sub1} \PY{n}{sub2} \PY{o}{=} \PY{n+nn}{Id}\PY{p}{.}\PY{n}{equal\PYZus{}subst} \PY{n}{equal} \PY{n}{sub1} \PY{n}{sub2}
+
+\PY{k}{let}\PY{o}{\PYZpc{}}\PY{n}{expect\PYZus{}test} \PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{e1}\PY{l+s+s2}{\PYZdq{}} \PY{o}{=}
+  \PY{n+nn}{Id}\PY{p}{.}\PY{n}{reset} \PY{n+nb+bp}{()}\PY{o}{;}
+  \PY{k}{let} \PY{n}{print} \PY{n}{e1} \PY{n}{e2} \PY{o}{=}
+    \PY{n+nn}{Format}\PY{p}{.}\PY{n}{printf} \PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{@[@[\PYZpc{}a@]@ = @[\PYZpc{}a@]: \PYZpc{}b@]@.}\PY{l+s+s2}{\PYZdq{}}
+      \PY{n}{pp} \PY{n}{e1}
+      \PY{n}{pp} \PY{n}{e2}
+      \PY{o}{(}\PY{n}{equal} \PY{n}{e1} \PY{n}{e2}\PY{o}{)}
+  \PY{k}{in}
+  \PY{k}{let} \PY{k}{open} \PY{n+nc}{Builder} \PY{k}{in}
+  \PY{n}{print} \PY{o}{(}\PY{k}{let}\PY{o}{*} \PY{n}{x} \PY{o}{=} \PY{n}{l} \PY{l+m+mi}{1} \PY{k}{in} \PY{n}{x}\PY{o}{)} \PY{o}{(}\PY{k}{let}\PY{o}{*} \PY{n}{y} \PY{o}{=} \PY{n}{l} \PY{l+m+mi}{1} \PY{k}{in} \PY{n}{y}\PY{o}{)}\PY{o}{;}
+  \PY{o}{[}\PY{o}{\PYZpc{}}\PY{n}{expect} \PY{o}{\PYZob{}}\PY{o}{|} \PY{k}{let}\PY{o}{(}\PY{l+m+mi}{1}\PY{o}{,} \PY{o}{\PYZus{}}\PY{n}{x2}\PY{o}{.}\PY{o}{\PYZus{}}\PY{n}{x2}\PY{o}{)} \PY{o}{=} \PY{k}{let}\PY{o}{(}\PY{l+m+mi}{1}\PY{o}{,} \PY{o}{\PYZus{}}\PY{n}{x1}\PY{o}{.}\PY{o}{\PYZus{}}\PY{n}{x1}\PY{o}{)}\PY{o}{:} \PY{n+nb+bp}{true} \PY{o}{|}\PY{o}{\PYZcb{}}\PY{o}{]}\PY{o}{;}
+  \PY{n}{print} \PY{o}{(}\PY{k}{let}\PY{o}{*} \PY{n}{x} \PY{o}{=} \PY{n}{l} \PY{l+m+mi}{1} \PY{k}{in} \PY{n}{x}\PY{o}{)} \PY{o}{(}\PY{k}{let}\PY{o}{*} \PY{n}{y} \PY{o}{=} \PY{n}{l} \PY{l+m+mi}{2} \PY{k}{in} \PY{n}{y}\PY{o}{)}\PY{o}{;}
+  \PY{o}{[}\PY{o}{\PYZpc{}}\PY{n}{expect} \PY{o}{\PYZob{}}\PY{o}{|} \PY{k}{let}\PY{o}{(}\PY{l+m+mi}{1}\PY{o}{,} \PY{o}{\PYZus{}}\PY{n}{x5}\PY{o}{.}\PY{o}{\PYZus{}}\PY{n}{x5}\PY{o}{)} \PY{o}{=} \PY{k}{let}\PY{o}{(}\PY{l+m+mi}{2}\PY{o}{,} \PY{o}{\PYZus{}}\PY{n}{x4}\PY{o}{.}\PY{o}{\PYZus{}}\PY{n}{x4}\PY{o}{)}\PY{o}{:} \PY{n+nb+bp}{false} \PY{o}{|}\PY{o}{\PYZcb{}}\PY{o}{]}\PY{o}{;}
+  \PY{n}{print}
+    \PY{o}{(}\PY{k}{let}\PY{o}{*} \PY{n}{x} \PY{o}{=} \PY{n}{l} \PY{l+m+mi}{1} \PY{k}{in} \PY{k}{let}\PY{o}{*} \PY{n}{k} \PY{o}{=} \PY{n}{l} \PY{l+m+mi}{2} \PY{k}{in} \PY{n}{x} \PY{o}{+} \PY{n}{k}\PY{o}{)}
+    \PY{o}{(}\PY{k}{let}\PY{o}{*} \PY{n}{y} \PY{o}{=} \PY{n}{l} \PY{l+m+mi}{1} \PY{k}{in} \PY{k}{let}\PY{o}{*} \PY{n}{k} \PY{o}{=} \PY{n}{l} \PY{l+m+mi}{2} \PY{k}{in} \PY{n}{y} \PY{o}{+} \PY{n}{k}\PY{o}{)}\PY{o}{;}
+  \PY{o}{[}\PY{o}{\PYZpc{}}\PY{n}{expect} \PY{o}{\PYZob{}}\PY{o}{|}
+    \PY{k}{let}\PY{o}{(}\PY{l+m+mi}{1}\PY{o}{,} \PY{o}{\PYZus{}}\PY{n}{x8}\PY{o}{.}\PY{k}{let}\PY{o}{(}\PY{l+m+mi}{2}\PY{o}{,} \PY{o}{\PYZus{}}\PY{n}{x9}\PY{o}{.}\PY{n}{add}\PY{o}{(}\PY{o}{\PYZus{}}\PY{n}{x8}\PY{o}{,} \PY{o}{\PYZus{}}\PY{n}{x9}\PY{o}{)}\PY{o}{)}\PY{o}{)}
+    \PY{o}{=} \PY{k}{let}\PY{o}{(}\PY{l+m+mi}{1}\PY{o}{,} \PY{o}{\PYZus{}}\PY{n}{x6}\PY{o}{.}\PY{k}{let}\PY{o}{(}\PY{l+m+mi}{2}\PY{o}{,} \PY{o}{\PYZus{}}\PY{n}{x7}\PY{o}{.}\PY{n}{add}\PY{o}{(}\PY{o}{\PYZus{}}\PY{n}{x6}\PY{o}{,} \PY{o}{\PYZus{}}\PY{n}{x7}\PY{o}{)}\PY{o}{)}\PY{o}{)}\PY{o}{:} \PY{n+nb+bp}{true} \PY{o}{|}\PY{o}{\PYZcb{}}\PY{o}{]}\PY{o}{;}
+  \PY{n}{print}
+    \PY{o}{(}\PY{k}{let}\PY{o}{*} \PY{n}{x} \PY{o}{=} \PY{n}{l} \PY{l+m+mi}{1} \PY{k}{in} \PY{k}{let}\PY{o}{*} \PY{n}{k} \PY{o}{=} \PY{n}{l} \PY{l+m+mi}{2} \PY{k}{in} \PY{n}{x} \PY{o}{+} \PY{n}{k}\PY{o}{)}
+    \PY{o}{(}\PY{k}{let}\PY{o}{*} \PY{n}{y} \PY{o}{=} \PY{n}{l} \PY{l+m+mi}{1} \PY{k}{in} \PY{k}{let}\PY{o}{*} \PY{n}{k} \PY{o}{=} \PY{n}{l} \PY{l+m+mi}{2} \PY{k}{in} \PY{n}{k} \PY{o}{+} \PY{n}{y}\PY{o}{)}\PY{o}{;}
+  \PY{o}{[}\PY{o}{\PYZpc{}}\PY{n}{expect} \PY{o}{\PYZob{}}\PY{o}{|}
+    \PY{k}{let}\PY{o}{(}\PY{l+m+mi}{1}\PY{o}{,} \PY{o}{\PYZus{}}\PY{n}{x16}\PY{o}{.}\PY{k}{let}\PY{o}{(}\PY{l+m+mi}{2}\PY{o}{,} \PY{o}{\PYZus{}}\PY{n}{x17}\PY{o}{.}\PY{n}{add}\PY{o}{(}\PY{o}{\PYZus{}}\PY{n}{x16}\PY{o}{,} \PY{o}{\PYZus{}}\PY{n}{x17}\PY{o}{)}\PY{o}{)}\PY{o}{)}
+    \PY{o}{=} \PY{k}{let}\PY{o}{(}\PY{l+m+mi}{1}\PY{o}{,} \PY{o}{\PYZus{}}\PY{n}{x14}\PY{o}{.}\PY{k}{let}\PY{o}{(}\PY{l+m+mi}{2}\PY{o}{,} \PY{o}{\PYZus{}}\PY{n}{x15}\PY{o}{.}\PY{n}{add}\PY{o}{(}\PY{o}{\PYZus{}}\PY{n}{x15}\PY{o}{,} \PY{o}{\PYZus{}}\PY{n}{x14}\PY{o}{)}\PY{o}{)}\PY{o}{)}\PY{o}{:} \PY{n+nb+bp}{false} \PY{o}{|}\PY{o}{\PYZcb{}}\PY{o}{]}\PY{o}{;;}
+
+\PY{k}{let} \PY{n}{close\PYZus{}with} \PY{o}{(}\PY{n+nc}{B} \PY{o}{(}\PY{n}{x}\PY{o}{,} \PY{n}{e}\PY{o}{)}\PY{o}{)} \PY{n}{e\PYZsq{}} \PY{o}{=} \PY{n}{subst} \PY{n+nn}{Id}\PY{p}{.}\PY{o}{(}\PY{n}{singleton} \PY{n}{x} \PY{n}{e\PYZsq{}}\PY{o}{)} \PY{n}{e}
+
+\PY{k}{let} \PY{k}{rec} \PY{n}{eval} \PY{o}{:} \PY{n}{t} \PY{o}{\PYZhy{}\PYZgt{}} \PY{k+kt}{int} \PY{o}{=}
+  \PY{k}{function}
+  \PY{o}{|} \PY{n+nc}{Var} \PY{o}{\PYZus{}} \PY{o}{\PYZhy{}\PYZgt{}} \PY{n}{failwith} \PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{open term}\PY{l+s+s2}{\PYZdq{}}
+  \PY{o}{|} \PY{n+nc}{Lit} \PY{n}{k} \PY{o}{\PYZhy{}\PYZgt{}} \PY{n}{k}
+  \PY{o}{|} \PY{n+nc}{Add} \PY{o}{(}\PY{n}{e1}\PY{o}{,} \PY{n}{e2}\PY{o}{)} \PY{o}{\PYZhy{}\PYZgt{}} \PY{n}{eval} \PY{n}{e1} \PY{o}{+} \PY{n}{eval} \PY{n}{e2}
+  \PY{o}{|} \PY{n+nc}{Let} \PY{o}{(}\PY{n}{e}\PY{o}{,} \PY{n}{b}\PY{o}{)} \PY{o}{\PYZhy{}\PYZgt{}} \PY{n}{eval} \PY{o}{(}\PY{n}{close\PYZus{}with} \PY{n}{b} \PY{n}{e}\PY{o}{)}
+
+\PY{c}{(*}\PY{c}{ Tests fixtures }\PY{c}{*)}
+
+\PY{k}{let} \PY{n}{e1}\PY{o}{,} \PY{n}{e2}\PY{o}{,} \PY{n}{e3}\PY{o}{,} \PY{n}{e4} \PY{o}{=}
+  \PY{n+nn}{Id}\PY{p}{.}\PY{n}{reset} \PY{n+nb+bp}{()}\PY{o}{;}
+  \PY{k}{let} \PY{k}{open} \PY{n+nc}{Builder} \PY{k}{in}
+  \PY{o}{(}\PY{n}{l} \PY{l+m+mi}{1} \PY{o}{+} \PY{n}{l} \PY{l+m+mi}{1}\PY{o}{)}\PY{o}{,}
+  \PY{o}{(}\PY{k}{let}\PY{o}{*} \PY{n}{x} \PY{o}{=} \PY{n}{l} \PY{l+m+mi}{1} \PY{o}{+} \PY{n}{l} \PY{l+m+mi}{1} \PY{k}{in} \PY{n}{x}\PY{o}{)}\PY{o}{,}
+  \PY{o}{(}\PY{k}{let}\PY{o}{*} \PY{n}{x} \PY{o}{=} \PY{n}{l} \PY{l+m+mi}{1} \PY{o}{+} \PY{n}{l} \PY{l+m+mi}{1} \PY{k}{in} \PY{n}{l} \PY{l+m+mi}{40} \PY{o}{+} \PY{n}{x}\PY{o}{)}\PY{o}{,}
+  \PY{o}{(}\PY{k}{let}\PY{o}{*} \PY{n}{x} \PY{o}{=} \PY{n}{l} \PY{l+m+mi}{1} \PY{o}{+} \PY{n}{l} \PY{l+m+mi}{1} \PY{k}{in} \PY{k}{let}\PY{o}{*} \PY{n}{y} \PY{o}{=} \PY{n}{x} \PY{o}{+} \PY{n}{l} \PY{l+m+mi}{1} \PY{k}{in} \PY{k}{let}\PY{o}{*} \PY{n}{x} \PY{o}{=} \PY{n}{l} \PY{l+m+mi}{3} \PY{k}{in} \PY{n}{x} \PY{o}{+} \PY{n}{y}\PY{o}{)}
+\end{Verbatim}
+
+\end{document}
