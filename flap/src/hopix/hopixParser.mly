@@ -154,7 +154,7 @@ expr_atomic:
 }
 
 
-|var_id=located(IDENTIFICATEUR) LCHEVRON tl=separated_nonempty_list(COMMA,located(htype)) RCHEVRON {
+|var_id=located(IDENTIFICATEUR) LCHEVRON tl=separated_list(COMMA,located(htype)) RCHEVRON {
   Variable ((Position.map (fun v -> Id v) var_id),Some tl)
 }
 |var_id=located(IDENTIFICATEUR) {
@@ -165,7 +165,7 @@ expr_atomic:
 
 app_chaine:
 
-| e=located(expr_atomic) DOT label_id=located(IDENTIFICATEUR) LCHEVRON tl=separated_nonempty_list(COMMA,located(htype)) RCHEVRON {
+| e=located(expr_atomic) DOT label_id=located(IDENTIFICATEUR) LCHEVRON tl=separated_list(COMMA,located(htype)) RCHEVRON {
   Field(e,Position.map (fun v -> LId v) label_id, Some tl)
 }
 | e=located(expr_atomic) DOT label_id=located(IDENTIFICATEUR) {
@@ -178,7 +178,7 @@ app_chaine:
 
 expr:
 
-|constr_id=located(CONST_ID) LCHEVRON tl=separated_nonempty_list(COMMA,located(htype)) RCHEVRON LPAR el = separated_nonempty_list(COMMA,located(expr)) RPAR{
+|constr_id=located(CONST_ID) LCHEVRON tl=separated_list(COMMA,located(htype)) RCHEVRON LPAR el = separated_nonempty_list(COMMA,located(expr)) RPAR{
   Tagged ((Position.map (fun v -> KId v) constr_id),Some tl,el)
 }
 
@@ -186,7 +186,7 @@ expr:
   Tagged ((Position.map (fun v -> KId v) constr_id),None,el)
 }
 
-|constr_id=located(CONST_ID) LCHEVRON tl=separated_nonempty_list(COMMA,located(htype)) RCHEVRON {
+|constr_id=located(CONST_ID) LCHEVRON tl=separated_list(COMMA,located(htype)) RCHEVRON {
   Tagged ((Position.map (fun v -> KId v) constr_id),Some tl,[])
 }
 |constr_id=located(CONST_ID) {
@@ -202,7 +202,7 @@ expr:
   Apply(y,e1) 
 }
 
-|LACC rl=separated_nonempty_list(COMMA,record) RACC LCHEVRON tl=separated_nonempty_list(COMMA,located(htype)) RCHEVRON{
+|LACC rl=separated_nonempty_list(COMMA,record) RACC LCHEVRON tl=separated_list(COMMA,located(htype)) RCHEVRON{
   Record(rl,Some tl)
 }
 
@@ -345,15 +345,15 @@ pattern_atomic :
   PLiteral(   Position.map (fun c -> LChar c) c)
 }
 
-| LPAR l = separated_nonempty_list(COMMA,labelPattern) RPAR LCHEVRON tl=separated_nonempty_list(COMMA,located(htype)) RCHEVRON {
+| LPAR l = separated_nonempty_list(COMMA,labelPattern) RPAR LCHEVRON tl=separated_list(COMMA,located(htype)) RCHEVRON {
   PRecord( l,Some tl)
 }
 
-| c = located(CONST_ID) LCHEVRON tl=separated_nonempty_list(COMMA,located(htype)) RCHEVRON LPAR l =separated_nonempty_list(COMMA,located(pattern)) RPAR {
+| c = located(CONST_ID) LCHEVRON tl=separated_list(COMMA,located(htype)) RCHEVRON LPAR l =separated_nonempty_list(COMMA,located(pattern)) RPAR {
   PTaggedValue(Position.map (fun v -> KId v) c, Some tl,l)
 }
 
-| c = located(CONST_ID) LCHEVRON tl=separated_nonempty_list(COMMA,located(htype)) RCHEVRON  {
+| c = located(CONST_ID) LCHEVRON tl=separated_list(COMMA,located(htype)) RCHEVRON  {
   PTaggedValue(Position.map (fun v -> KId v) c, Some tl,[])
 }
 
@@ -365,11 +365,7 @@ pattern_atomic :
   PTaggedValue(Position.map (fun v -> KId v) c, None,[])
 }
 
-| LPAR RPAR {
-  PTuple([])
-}
-
-| LPAR p=separated_nonempty_list(COMMA,located(pattern)) RPAR {
+| LPAR p=separated_list(COMMA,located(pattern)) RPAR {
   PTuple(p)
 }
 
