@@ -20,6 +20,10 @@
 
 %token <string> STRING
 %token <char> CHAR 
+
+
+// %right PVIRGULE 
+
 %right RARROW 
 %right AFFECTATION
 %left DPOINTS
@@ -31,7 +35,7 @@
 
 %left DIS BVERTICALE
 
-%nonassoc PVIRGULE 
+%right PVIRGULE 
 
 %start<HopixAST.t> program
 %%
@@ -109,23 +113,23 @@ tdefinitioniter:
 vdefinition:
 | LET var_id=located(IDENTIFICATEUR) EQUAL exp=located(expr) {
   SimpleValue (Position.map (fun v -> Id v) var_id,None,exp)
-}
+} %prec PVIRGULE
 | LET var_id=located(IDENTIFICATEUR) DPOINTS ts = located(typeScheme) EQUAL exp=located(expr){
   SimpleValue (Position.map (fun v -> Id v) var_id,Some ts,exp)
-}
+}  %prec PVIRGULE
 | FUN fdl = separated_list(COMMA, fundef) {
   RecFunctions fdl
-}
+} 
 
 
 
 fundef:
 | var_id = located(IDENTIFICATEUR) p= located(pattern) EQUAL e=located(expr) {
   ((Position.map (fun v -> Id v ) var_id),None,FunctionDefinition (p,e))
-}
+}  %prec PVIRGULE
 | DPOINTS ts = located(typeScheme) var_id = located(IDENTIFICATEUR) p= located(pattern) EQUAL e=located(expr) {
   ((Position.map (fun v -> Id v ) var_id),Some ts,FunctionDefinition (p,e))
-}
+}%prec PVIRGULE
 
 
 expr_atomic:
@@ -174,7 +178,6 @@ app_chaine:
 | e = located(expr_atomic) e1 = located(expr_atomic) {
   Apply(e,e1)
 }
-
 
 expr:
 
@@ -235,9 +238,9 @@ expr:
 | BACKSLASH p=located(pattern) RARROW e = located(expr) {
   Fun(FunctionDefinition(p,e))
 }
-
-
-
+| e=located(expr) PVIRGULE es=located(expr) { 
+    Sequence([e; es])
+} 
 
 | e= located(expr) AFFECTATION e1 = located(expr) {
   Assign(e,e1)
@@ -250,7 +253,8 @@ expr:
 }
 | v = vdefinition PVIRGULE e=located(expr) {
   Define(v,e)
-}
+} 
+
 |ea = expr_atomic { ea }
 |ac = app_chaine { ac }
 
