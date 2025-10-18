@@ -7,7 +7,6 @@
    *)
 %}
 
-
 %token EOF IF WHILE LET FUN TYPE EXTERN AND MATCH THEN ELSE DO UNTIL FOR FROM TO
 %token LPAR RPAR LCROCHET RCROCHET COMMA RARROW DIS LACC RACC AFFECTATION BACKSLASH
 %token EQUAL LCHEVRON RCHEVRON DPOINTS BVERTICALE MOINS EXCLAMATION PLUS REF 
@@ -15,12 +14,13 @@
 %token <string> VARIABLE
 %token <string> CONST_ID
 %token <string> IDENTIFICATEUR
-
+// %token <int64> ENTIER
+// %token <Int64.t> ENTIER
 %token <Mint.t> ENTIER
 
 %token <string> STRING
 %token <char> CHAR 
-
+%right RARROW 
 %right AFFECTATION
 %left DPOINTS
 %left PLUS MOINS
@@ -28,13 +28,10 @@
 %left AND OR
 %left GT LT LTE EQ DRARROW
 
-%right RARROW 
-// DRARROW
-
 
 %left DIS BVERTICALE
 
-%right PVIRGULE 
+%nonassoc PVIRGULE 
 
 %start<HopixAST.t> program
 %%
@@ -397,7 +394,8 @@ pattern :
   PTypeAnnotation(p,t)
 }
 
-binop: 
+%inline binop: 
+
 | PLUS {
   Id("`+`")
 }
