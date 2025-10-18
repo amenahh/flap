@@ -70,22 +70,14 @@ tdefinition:
 | BVERTICALE? constr_id = located(CONST_ID) td = tdefinitioniter {
   DefineSumType ((Position.map (fun v -> KId v) constr_id,[])::td)
 }
-| LACC label_id=located(IDENTIFICATEUR) DPOINTS t = located(htype)  RACC{
-  DefineRecordType [(Position.map (fun v -> LId v) label_id,t)]
-}
-| LACC label_id=located(IDENTIFICATEUR) DPOINTS t = located(htype) COMMA tl= tylablist RACC{
-  DefineRecordType ((Position.map (fun v -> LId v) label_id,t)::tl)
+| LACC label_id_list=separated_nonempty_list(COMMA,label_id)  RACC{
+  DefineRecordType label_id_list
 }
 
-tylablist:
-|  label_id=located(IDENTIFICATEUR) DPOINTS t = located(htype) {
-  [(Position.map (fun v -> LId v) label_id,t)]
+label_id:
+| id=located(IDENTIFICATEUR) DPOINTS t= located(htype) {
+  (Position.map (fun v -> LId v) id,t)
 }
-| label_id=located(IDENTIFICATEUR) DPOINTS t = located(htype) COMMA tl= tylablist{
-  (Position.map (fun v -> LId v) label_id, t)::tl
-}
-
-
 
 (*J'ai fais ca car si la liste de tdef a un element le | est optionnel mais c'est pas le cas pour les tdef suivants*)
 tdefinitioniter:
