@@ -1,9 +1,10 @@
 %{ (* -*- tuareg -*- *)
 
   open HopixAST
+  (*
   open Position
-  open Mint
-
+   open Mint
+   *)
 %}
 
 
@@ -20,6 +21,26 @@
 
 %token <string> STRING
 %token <char> CHAR 
+
+// %nonassoc LET FUN
+// %left LPAR 
+// RPAR
+// %left LCROCHET RCROCHET
+// %left LCHEVRON RCHEVRON
+// %nonassoc  EXCLAMATION
+// %nonassoc PVIRGULE REF
+// %nonassoc AFFECTATION
+
+%left DPOINTS
+%left PLUS MOINS
+%left STAR DIV
+%left AND OR
+%left GT LT LTE EQ DRARROW
+
+%right RARROW 
+// DRARROW
+
+%left DIS BVERTICALE
 
 %start<HopixAST.t> program
 %%
@@ -95,15 +116,26 @@ tdefinitioniter:
 }
 
 vdefinition:
-| LET var_id=located(IDENTIFICATEUR) EQUAL exp=located(local_expr) {
+| LET var_id=located(IDENTIFICATEUR) EQUAL exp=located(expr) {
   SimpleValue (Position.map (fun v -> Id v) var_id,None,exp)
 }
-| LET var_id=located(IDENTIFICATEUR) DPOINTS ts = located(typeScheme) EQUAL exp=located(local_expr){
+| LET var_id=located(IDENTIFICATEUR) DPOINTS ts = located(typeScheme) EQUAL exp=located(expr){
   SimpleValue (Position.map (fun v -> Id v) var_id,Some ts,exp)
 }
 | FUN fdl = separated_list(COMMA, fundef) {
   RecFunctions fdl
 }
+
+// vdefinition:
+// | LET var_id=located(IDENTIFICATEUR) EQUAL exp=located(local_expr) {
+//   SimpleValue (Position.map (fun v -> Id v) var_id,None,exp)
+// }
+// | LET var_id=located(IDENTIFICATEUR) DPOINTS ts = located(typeScheme) EQUAL exp=located(local_expr){
+//   SimpleValue (Position.map (fun v -> Id v) var_id,Some ts,exp)
+// }
+// | FUN fdl = separated_list(COMMA, fundef) {
+//   RecFunctions fdl
+// }
 
 
 fundef:
@@ -126,12 +158,12 @@ expr_atomic:
 |c=located(CHAR) {
   Literal   (Position.map (fun v -> LChar v) c )
 }
-|LPAR e=expr RPAR {
-  e
-}
-|LPAR RPAR {
-  Tuple([])
-}
+// |LPAR e=expr RPAR {
+//   e
+// }
+// |LPAR RPAR {
+//   Tuple([])
+// }
 
 |LPAR e=located(expr) COMMA el=separated_nonempty_list(COMMA,located(expr)) RPAR {
   Tuple(e::el)
@@ -139,6 +171,15 @@ expr_atomic:
 | LPAR e1=located(expr) DPOINTS t=located(htype) RPAR {
   TypeAnnotation (e1,t)
 }
+
+|LPAR e=expr RPAR {
+  e
+}
+|LPAR RPAR {
+  Tuple([])
+}
+
+
 |var_id=located(IDENTIFICATEUR) LCHEVRON tl=separated_nonempty_list(COMMA,located(htype)) RCHEVRON {
   Variable ((Position.map (fun v -> Id v) var_id),Some tl)
 }
@@ -154,9 +195,9 @@ expr_atomic:
 
 
 app_chaine:
-| v = vdefinition PVIRGULE e=located(expr_atomic) {
-  Define(v,e)
-}
+// | v = vdefinition PVIRGULE e=located(expr_atomic) {
+//   Define(v,e)
+// }
 | e=located(expr_atomic) DOT label_id=located(IDENTIFICATEUR) LCHEVRON tl=separated_nonempty_list(COMMA,located(htype)) RCHEVRON {
   Field(e,Position.map (fun v -> LId v) label_id, Some tl)
 }
@@ -166,24 +207,24 @@ app_chaine:
 | e = located(expr_atomic) e1 = located(expr_atomic) {
   Apply(e,e1)
 }
-| REF e= located(expr_atomic) {
-  Ref(e)
-}
-| EXCLAMATION e=located(expr_atomic) {
-  Read(e)
-}
-| e= located(expr_atomic) AFFECTATION e1 = located(expr_atomic) {
-  Assign(e,e1)
-}
+// | REF e= located(expr_atomic) {
+//   Ref(e)
+// }
+// | EXCLAMATION e=located(expr_atomic) {
+//   Read(e)
+// }
+// | e= located(expr_atomic) AFFECTATION e1 = located(expr_atomic) {
+//   Assign(e,e1)
+// }
 
 
-local_expr:                       
-  | el=located(local_expr) PVIRGULE e=located(expr) { 
-    Sequence( [el;e] )
-  }
-  | e=expr { e }   
+// local_expr:                       
+//   | el=located(expr) PVIRGULE e=located(local_expr) { 
+//     Sequence( [el;e] )
+//   }
+//   | e=expr { e }   
 
-
+ 
 
 expr:
 |ea = expr_atomic { ea }
@@ -231,11 +272,24 @@ expr:
   Fun(FunctionDefinition(p,e))
 }
 
+|constr_id=located(CONST_ID) LCHEVRON tl=separated_nonempty_list(COMMA,located(htype)) RCHEVRON LPAR el = separated_nonempty_list(COMMA,located(expr)) RPAR{
+  Tagged ((Position.map (fun v -> KId v) constr_id),Some tl,el)
+}
+
 |constr_id=located(CONST_ID) LPAR el = separated_nonempty_list(COMMA,located(expr)) RPAR {
   Tagged ((Position.map (fun v -> KId v) constr_id),None,el)
 }
-|constr_id=located(CONST_ID) LCHEVRON tl=separated_nonempty_list(COMMA,located(htype)) RCHEVRON LPAR el = separated_nonempty_list(COMMA,located(expr)) RPAR{
-  Tagged ((Position.map (fun v -> KId v) constr_id),Some tl,el)
+| e= located(expr_atomic) AFFECTATION e1 = located(expr) {
+  Assign(e,e1)
+}
+| REF e= located(expr_atomic) {
+  Ref(e)
+}
+| EXCLAMATION e=located(expr_atomic) {
+  Read(e)
+}
+| v = vdefinition PVIRGULE e=located(expr) {
+  Define(v,e)
 }
 
 record:
@@ -284,16 +338,16 @@ htype :
 | t1=located(htype) RARROW t2=located(htype) {
   TyArrow (t1,t2)
 }
-| t1=located(htype) STAR tu = typeUplet {
+
+| t1=located(htype) tu = typeUplet {
   TyTuple (t1::tu)
 }
 
-
 typeUplet : 
-| t=located(type_atomic) STAR tu= typeUplet {
+| STAR t=located(type_atomic) tu= typeUplet {
   (t):: tu
 }
-| t=located(type_atomic) {
+| STAR t=located(type_atomic) {
     [t]
 }
 
@@ -329,6 +383,26 @@ pattern_atomic :
   PLiteral(   Position.map (fun c -> LChar c) c)
 }
 
+| LPAR l = separated_nonempty_list(COMMA,labelPattern) RPAR LCHEVRON tl=separated_nonempty_list(COMMA,located(htype)) RCHEVRON {
+  PRecord( l,Some tl)
+}
+
+| c = located(CONST_ID) LCHEVRON tl=separated_nonempty_list(COMMA,located(htype)) RCHEVRON LPAR l =separated_nonempty_list(COMMA,located(pattern)) RPAR {
+  PTaggedValue(Position.map (fun v -> KId v) c, Some tl,l)
+}
+
+| c = located(CONST_ID) LCHEVRON tl=separated_nonempty_list(COMMA,located(htype)) RCHEVRON  {
+  PTaggedValue(Position.map (fun v -> KId v) c, Some tl,[])
+}
+
+| c = located(CONST_ID)  LPAR l = separated_nonempty_list(COMMA,located(pattern)) RPAR {
+  PTaggedValue(Position.map (fun v -> KId v) c, None,l)
+}
+
+| c = located(CONST_ID) {
+  PTaggedValue(Position.map (fun v -> KId v) c, None,[])
+}
+
 | LPAR RPAR {
   PTuple([])
 }
@@ -337,11 +411,15 @@ pattern_atomic :
   PTuple(p)
 }
 
+| LPAR l = separated_nonempty_list(COMMA,labelPattern) RPAR {
+  PRecord(l,None)
+}
+
+
 pattern :
 | p=pattern_atomic {
   p
 }
-
 | p=located(pattern) BVERTICALE pp=located(pattern) {
   POr(p ::[pp])
 }
@@ -352,30 +430,6 @@ pattern :
 
 | p=located(pattern) DPOINTS t = located(htype){
   PTypeAnnotation(p,t)
-}
-
-| LPAR l = separated_nonempty_list(COMMA,labelPattern) RPAR {
-  PRecord(l,None)
-}
-
-| LPAR l = separated_nonempty_list(COMMA,labelPattern) RPAR LCHEVRON tl=separated_nonempty_list(COMMA,located(htype)) RCHEVRON {
-  PRecord( l,Some tl)
-}
-
-| c = located(CONST_ID) LCHEVRON tl=separated_nonempty_list(COMMA,located(htype)) RCHEVRON LPAR l =separated_nonempty_list(COMMA,located(pattern)) RPAR {
-  PTaggedValue(Position.map (fun v -> KId v) c, Some tl,l)
-}
-
-| c = located(CONST_ID) {
-  PTaggedValue(Position.map (fun v -> KId v) c, None,[])
-}
-
-| c = located(CONST_ID)  LPAR l = separated_nonempty_list(COMMA,located(pattern)) RPAR {
-  PTaggedValue(Position.map (fun v -> KId v) c, None,l)
-}
-
-| c = located(CONST_ID) LCHEVRON tl=separated_nonempty_list(COMMA,located(htype)) RCHEVRON  {
-  PTaggedValue(Position.map (fun v -> KId v) c, Some tl,[])
 }
 
 binop: 
