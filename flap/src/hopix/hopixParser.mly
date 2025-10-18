@@ -133,7 +133,7 @@ expr_atomic:
   Tuple([])
 }
 
-|LPAR e=located(expr) COMMA el=exprlist RPAR {
+|LPAR e=located(expr) COMMA el=separated_nonempty_list(COMMA,located(expr)) RPAR {
   Tuple(e::el)
 }
 | LPAR e1=located(expr) DPOINTS t=located(htype) RPAR {
@@ -231,10 +231,10 @@ expr:
   Fun(FunctionDefinition(p,e))
 }
 
-|constr_id=located(CONST_ID) LPAR el = exprlist RPAR {
+|constr_id=located(CONST_ID) LPAR el = separated_nonempty_list(COMMA,located(expr)) RPAR {
   Tagged ((Position.map (fun v -> KId v) constr_id),None,el)
 }
-|constr_id=located(CONST_ID) LCHEVRON tl=separated_nonempty_list(COMMA,located(htype)) RCHEVRON LPAR el = exprlist RPAR{
+|constr_id=located(CONST_ID) LCHEVRON tl=separated_nonempty_list(COMMA,located(htype)) RCHEVRON LPAR el = separated_nonempty_list(COMMA,located(expr)) RPAR{
   Tagged ((Position.map (fun v -> KId v) constr_id),Some tl,el)
 }
 
@@ -261,14 +261,6 @@ branchList :
 branche:
 | p = located(pattern) RARROW e = located(expr) {
   Branch(p,e)
-}
-
-exprlist:
-| e=located(expr) COMMA el=exprlist {
-  e::el
-} 
-| e=located(expr) {
-  [e]
 }
 
 type_atomic :
