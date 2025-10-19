@@ -9,8 +9,8 @@
 
 %token EOF IF WHILE LET FUN TYPE EXTERN AND MATCH THEN ELSE DO UNTIL FOR FROM TO
 %token LPAR RPAR LCROCHET RCROCHET COMMA RARROW DIS LACC RACC AFFECTATION BACKSLASH
-%token EQUAL LCHEVRON RCHEVRON DPOINTS BVERTICALE MOINS EXCLAMATION PLUS REF 
-%token BHORIZONTALE DIV STAR LT GT DRARROW EQ OR LTE DOT PVIRGULE
+%token EQUAL LCHEVRON RCHEVRON DPOINTS BVERTICALE MOINS EXCLAMATION PLUS REF PREFIX
+%token BHORIZONTALE DIV STAR LT GT DRARROW EQ OR LTE DOT PVIRGULE VDEFPREC
 %token <string> VARIABLE
 %token <string> CONST_ID
 %token <string> IDENTIFICATEUR
@@ -22,20 +22,23 @@
 %token <char> CHAR 
 
 
-// %right PVIRGULE 
-
 %right RARROW 
 %right AFFECTATION
+
+%right PVIRGULE 
+%nonassoc VDEFPREC
 %left DPOINTS
 %left PLUS MOINS
 %left STAR DIV
 %left AND OR
 %left GT LT LTE EQ DRARROW
 
+%right PREFIX
+
 
 %left DIS BVERTICALE
 
-%right PVIRGULE 
+
 
 %start<HopixAST.t> program
 %%
@@ -113,10 +116,10 @@ tdefinitioniter:
 vdefinition:
 | LET var_id=located(IDENTIFICATEUR) EQUAL exp=located(expr) {
   SimpleValue (Position.map (fun v -> Id v) var_id,None,exp)
-} %prec PVIRGULE
+} %prec VDEFPREC
 | LET var_id=located(IDENTIFICATEUR) DPOINTS ts = located(typeScheme) EQUAL exp=located(expr){
   SimpleValue (Position.map (fun v -> Id v) var_id,Some ts,exp)
-}  %prec PVIRGULE
+}  %prec VDEFPREC
 | FUN fdl = separated_list(COMMA, fundef) {
   RecFunctions fdl
 } 
@@ -181,6 +184,9 @@ app_chaine:
 
 expr:
 
+|ea = expr_atomic { ea }
+|ac = app_chaine { ac }
+
 |constr_id=located(CONST_ID) LCHEVRON tl=separated_list(COMMA,located(htype)) RCHEVRON LPAR el = separated_nonempty_list(COMMA,located(expr)) RPAR{
   Tagged ((Position.map (fun v -> KId v) constr_id),Some tl,el)
 }
@@ -229,7 +235,7 @@ expr:
   Case(e,b)
 }
 |DO LACC e1=located(expr) RACC UNTIL LPAR e2=located(expr) RPAR {
-  While (e2,e1) (* Pas sur parce que techniquement until veux que While((!e2),e1) *)
+  Sequence [e1; Position.with_poss $startpos $endpos (While(e2,e1))] (* Pas sur parce que techniquement until veux que While((!e2),e1) *)
 }
 | FOR var_id=located(IDENTIFICATEUR) FROM LPAR e1=located(expr) RPAR TO LPAR e2=located(expr) RPAR LACC e3=located(expr) RACC {
   For (Position.map (fun v -> Id v) var_id,e1,e2,e3)
@@ -238,6 +244,11 @@ expr:
 | BACKSLASH p=located(pattern) RARROW e = located(expr) {
   Fun(FunctionDefinition(p,e))
 }
+
+| v = vdefinition PVIRGULE e=located(expr) %prec VDEFPREC{
+  Define(v,e)
+} 
+
 | e=located(expr) PVIRGULE es=located(expr) { 
     Sequence([e; es])
 } 
@@ -245,18 +256,14 @@ expr:
 | e= located(expr) AFFECTATION e1 = located(expr) {
   Assign(e,e1)
 }
-| REF e= located(expr_atomic) {
+| REF e= located(expr) %prec PREFIX {
   Ref(e)
 }
-| EXCLAMATION e=located(expr_atomic) {
+| EXCLAMATION e=located(expr) %prec PREFIX {
   Read(e)
 }
-| v = vdefinition PVIRGULE e=located(expr) {
-  Define(v,e)
-} 
 
-|ea = expr_atomic { ea }
-|ac = app_chaine { ac }
+
 
 record:
 | label_id=located(IDENTIFICATEUR) EQUAL e=located(expr){
