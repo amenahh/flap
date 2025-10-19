@@ -10,7 +10,9 @@
 %token EOF IF WHILE LET FUN TYPE EXTERN AND MATCH THEN ELSE DO UNTIL FOR FROM TO
 %token LPAR RPAR LCROCHET RCROCHET COMMA RARROW DIS LACC RACC AFFECTATION BACKSLASH
 %token EQUAL LCHEVRON RCHEVRON DPOINTS BVERTICALE MOINS EXCLAMATION PLUS REF PREFIX
-%token BHORIZONTALE DIV STAR LT GT DRARROW EQ OR LTE DOT PVIRGULE VDEFPREC
+%token BHORIZONTALE DIV STAR LT GT DRARROW EQ OR LTE DOT PVIRGULE VDEFPREC TEST 
+%token GAUCHE
+// %token FAIBLE FORT
 %token <string> VARIABLE
 %token <string> CONST_ID
 %token <string> IDENTIFICATEUR
@@ -21,7 +23,7 @@
 %token <string> STRING
 %token <char> CHAR 
 
-
+%right TEST
 %right RARROW 
 %right AFFECTATION
 
@@ -158,8 +160,15 @@ expr_atomic:
 }
 |LPAR RPAR {
   Tuple([])
-}
+} 
 
+// |constr_id=located(CONST_ID) LCHEVRON tl=separated_list(COMMA,located(htype)) RCHEVRON {
+//   Tagged ((Position.map (fun v -> KId v) constr_id),Some tl,[])
+// }
+
+// |constr_id=located(CONST_ID){
+//   Tagged ((Position.map (fun v -> KId v) constr_id),None,[])
+// }
 
 |var_id=located(IDENTIFICATEUR) LCHEVRON tl=separated_list(COMMA,located(htype)) RCHEVRON {
   Variable ((Position.map (fun v -> Id v) var_id),Some tl)
@@ -168,9 +177,21 @@ expr_atomic:
   Variable ((Position.map (fun v -> Id v) var_id),None)
 }
 
+|LACC rl=separated_nonempty_list(COMMA,record) RACC LCHEVRON tl=separated_list(COMMA,located(htype)) RCHEVRON{
+  Record(rl,Some tl)
+}
+
+|LACC rl=separated_nonempty_list(COMMA,record)  RACC {
+  Record(rl,None)
+}
+
 
 
 app_chaine:
+
+// | e = expr_atomic {
+//   e
+// }
 
 | e=located(expr_atomic) DOT label_id=located(IDENTIFICATEUR) LCHEVRON tl=separated_list(COMMA,located(htype)) RCHEVRON {
   Field(e,Position.map (fun v -> LId v) label_id, Some tl)
@@ -178,13 +199,16 @@ app_chaine:
 | e=located(expr_atomic) DOT label_id=located(IDENTIFICATEUR) {
   Field(e,Position.map (fun v -> LId v) label_id, None)
 }
-| e = located(expr_atomic) e1 = located(expr_atomic) {
+| e = located(expr_atomic) e1 = located(app_chaine) {
   Apply(e,e1)
+}%prec GAUCHE
+| e = expr_atomic {
+  e
 }
-
+ 
 expr:
 
-|ea = expr_atomic { ea }
+// |ea = expr_atomic { ea }
 |ac = app_chaine { ac }
 
 |constr_id=located(CONST_ID) LCHEVRON tl=separated_list(COMMA,located(htype)) RCHEVRON LPAR el = separated_nonempty_list(COMMA,located(expr)) RPAR{
@@ -200,7 +224,7 @@ expr:
 }
 |constr_id=located(CONST_ID) {
   Tagged ((Position.map (fun v -> KId v) constr_id),None,[])
-}
+} 
 
 | e = located(expr) b =located(binop) e1 = located(expr){
   let x = 
@@ -210,14 +234,7 @@ expr:
   in
   Apply(y,e1) 
 }
-
-|LACC rl=separated_nonempty_list(COMMA,record) RACC LCHEVRON tl=separated_list(COMMA,located(htype)) RCHEVRON{
-  Record(rl,Some tl)
-}
-
-|LACC rl=separated_nonempty_list(COMMA,record)  RACC {
-  Record(rl,None)
-}
+//y'avait les record ici jlai tej en haut
 
 | IF LPAR e1 = located(expr) RPAR THEN LACC e2 = located(expr) RACC ELSE LACC e3 = located(expr) RACC {
   IfThenElse(e1,e2,e3)
@@ -291,6 +308,9 @@ branche:
 }
 
 type_atomic :
+|type_con=IDENTIFICATEUR LCHEVRON tl=separated_nonempty_list(COMMA,located(htype)) RCHEVRON {
+  TyCon (TCon type_con,tl)
+}
 | tv = VARIABLE {
   TyVar (TId tv)
 }
@@ -301,18 +321,11 @@ type_atomic :
   TyCon (TCon type_con,[])
 }
 
-htype : 
+uplet : 
 | t=type_atomic {
   t
 }
-|type_con=IDENTIFICATEUR LCHEVRON tl=separated_nonempty_list(COMMA,located(htype)) RCHEVRON {
-  TyCon (TCon type_con,tl)
-}
-| t1=located(htype) RARROW t2=located(htype) {
-  TyArrow (t1,t2)
-}
-
-| t1=located(htype) tu = typeUplet {
+| t1=located(type_atomic) tu = typeUplet {
   TyTuple (t1::tu)
 }
 
@@ -323,6 +336,16 @@ typeUplet :
 | STAR t=located(type_atomic) {
     [t]
 }
+
+htype:
+| t1=located(uplet) RARROW t2=located(htype) {
+  TyArrow (t1,t2)
+}
+| t1=uplet {
+  t1
+}%prec TEST
+
+
 
 typeScheme :
 | LCROCHET l=separated_nonempty_list(COMMA,var) RCROCHET t=located(htype) {
