@@ -24,6 +24,9 @@
 %right RARROW 
 %right AFFECTATION
 
+%nonassoc CONST_ALONE      
+%nonassoc LPAR    
+
 %right PVIRGULE 
 %nonassoc VDEFPREC
 %left DPOINTS
@@ -159,6 +162,14 @@ expr_atomic:
   Tuple([])
 } 
 
+|constr_id=located(CONST_ID) LCHEVRON tl=separated_list(COMMA,located(htype)) RCHEVRON {
+  Tagged ((Position.map (fun v -> KId v) constr_id),Some tl,[])
+}%prec CONST_ALONE
+
+|constr_id=located(CONST_ID){
+  Tagged ((Position.map (fun v -> KId v) constr_id),None,[])
+}%prec CONST_ALONE
+
 |var_id=located(IDENTIFICATEUR) LCHEVRON tl=separated_list(COMMA,located(htype)) RCHEVRON {
   Variable ((Position.map (fun v -> Id v) var_id),Some tl)
 }
@@ -203,12 +214,6 @@ expr:
   Tagged ((Position.map (fun v -> KId v) constr_id),None,el)
 }
 
-|constr_id=located(CONST_ID) LCHEVRON tl=separated_list(COMMA,located(htype)) RCHEVRON {
-  Tagged ((Position.map (fun v -> KId v) constr_id),Some tl,[])
-}
-|constr_id=located(CONST_ID) {
-  Tagged ((Position.map (fun v -> KId v) constr_id),None,[])
-} 
 
 | e = located(expr) b =located(binop) e1 = located(expr){
   let x = 
@@ -312,7 +317,7 @@ type_atomic :
   TyCon (TCon type_con,[])
 }
 
-uplet : 
+leftType : 
 | t=type_atomic {
   t
 }
@@ -329,10 +334,10 @@ typeUplet :
 }
 
 htype:
-| t1=located(uplet) RARROW t2=located(htype) {
+| t1=located(leftType) RARROW t2=located(htype) {
   TyArrow (t1,t2)
 }
-| t1=uplet {
+| t1=leftType {
   t1
 }%prec TEST
 
@@ -390,28 +395,21 @@ pattern_atomic :
   PTaggedValue(Position.map (fun v -> KId v) c, None,[])
 }
 
-| LPAR p=pattern RPAR {
-  p
-}
-
 | LPAR RPAR {
   PTuple([])
 }
-| LPAR pat= located(pattern) COMMA p=listpat RPAR {
-  PTuple(pat::p)
+
+| LPAR p=pattern RPAR {
+  p                    
+}
+
+| LPAR p=located(pattern) COMMA pl=separated_nonempty_list(COMMA,located(pattern)) RPAR {
+  PTuple(p::pl)
 }
 
 | LACC l = separated_nonempty_list(COMMA,labelPattern) RACC {
   PRecord(l,None)
 } 
-
-listpat : 
-| p= located(pattern) COMMA l=listpat{
-  p::l
-}
-| p = located(pattern){
-  [p]
-}
 
 
 pattern :
