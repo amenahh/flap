@@ -11,13 +11,10 @@
 %token LPAR RPAR LCROCHET RCROCHET COMMA RARROW DIS LACC RACC AFFECTATION BACKSLASH
 %token EQUAL LCHEVRON RCHEVRON DPOINTS BVERTICALE MOINS EXCLAMATION PLUS REF PREFIX
 %token BHORIZONTALE DIV STAR LT GT DRARROW EQ OR LTE DOT PVIRGULE VDEFPREC TEST 
-%token GAUCHE
-// %token FAIBLE FORT
+
 %token <string> VARIABLE
 %token <string> CONST_ID
 %token <string> IDENTIFICATEUR
-// %token <int64> ENTIER
-// %token <Int64.t> ENTIER
 %token <Mint.t> ENTIER
 
 %token <string> STRING
@@ -162,14 +159,6 @@ expr_atomic:
   Tuple([])
 } 
 
-// |constr_id=located(CONST_ID) LCHEVRON tl=separated_list(COMMA,located(htype)) RCHEVRON {
-//   Tagged ((Position.map (fun v -> KId v) constr_id),Some tl,[])
-// }
-
-// |constr_id=located(CONST_ID){
-//   Tagged ((Position.map (fun v -> KId v) constr_id),None,[])
-// }
-
 |var_id=located(IDENTIFICATEUR) LCHEVRON tl=separated_list(COMMA,located(htype)) RCHEVRON {
   Variable ((Position.map (fun v -> Id v) var_id),Some tl)
 }
@@ -188,20 +177,15 @@ expr_atomic:
 
 
 app_chaine:
-
-// | e = expr_atomic {
-//   e
-// }
-
 | e=located(expr_atomic) DOT label_id=located(IDENTIFICATEUR) LCHEVRON tl=separated_list(COMMA,located(htype)) RCHEVRON {
   Field(e,Position.map (fun v -> LId v) label_id, Some tl)
 }
 | e=located(expr_atomic) DOT label_id=located(IDENTIFICATEUR) {
   Field(e,Position.map (fun v -> LId v) label_id, None)
 }
-| e = located(expr_atomic) e1 = located(app_chaine) {
+| e = located(app_chaine) e1 =located(expr_atomic) {
   Apply(e,e1)
-}%prec GAUCHE
+}
 | e = expr_atomic {
   e
 }
@@ -262,7 +246,9 @@ expr:
   Fun(FunctionDefinition(p,e))
 }
 
-| v = vdefinition PVIRGULE e=located(expr) %prec VDEFPREC{
+| v = vdefinition PVIRGULE e=located(expr) 
+// %prec VDEFPREC
+{
   Define(v,e)
 } 
 
@@ -289,16 +275,21 @@ record:
 
 
 branchList :
-| BVERTICALE b = located(branche) BVERTICALE l=branchList {
+| l = branches {
+  l
+}
+| b = located(branche){
+  [b]
+}
+| b = located(branche) l=branches {
+  b::l
+}
+
+branches :
+| BVERTICALE b = located(branche) l=branches {
   b::l
 }
 | BVERTICALE b = located(branche) {
-  [b]
-}
-| b = located(branche) BVERTICALE l=branchList {
-  b::l
-}
-| b = located(branche) {
   [b]
 }
 
@@ -379,7 +370,7 @@ pattern_atomic :
   PLiteral(   Position.map (fun c -> LChar c) c)
 }
 
-| LPAR l = separated_nonempty_list(COMMA,labelPattern) RPAR LCHEVRON tl=separated_list(COMMA,located(htype)) RCHEVRON {
+| LACC l = separated_nonempty_list(COMMA,labelPattern) RACC LCHEVRON tl=separated_list(COMMA,located(htype)) RCHEVRON {
   PRecord( l,Some tl)
 }
 
@@ -399,12 +390,27 @@ pattern_atomic :
   PTaggedValue(Position.map (fun v -> KId v) c, None,[])
 }
 
-| LPAR p=separated_list(COMMA,located(pattern)) RPAR {
-  PTuple(p)
+| LPAR p=pattern RPAR {
+  p
 }
 
-| LPAR l = separated_nonempty_list(COMMA,labelPattern) RPAR {
+| LPAR RPAR {
+  PTuple([])
+}
+| LPAR pat= located(pattern) COMMA p=listpat RPAR {
+  PTuple(pat::p)
+}
+
+| LACC l = separated_nonempty_list(COMMA,labelPattern) RACC {
   PRecord(l,None)
+} 
+
+listpat : 
+| p= located(pattern) COMMA l=listpat{
+  p::l
+}
+| p = located(pattern){
+  [p]
 }
 
 
