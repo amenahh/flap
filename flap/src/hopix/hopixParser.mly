@@ -122,7 +122,7 @@ vdefinition:
 | LET var_id=located(IDENTIFICATEUR) DPOINTS ts = located(typeScheme) EQUAL exp=located(expr){
   SimpleValue (Position.map (fun v -> Id v) var_id,Some ts,exp)
 }  %prec VDEFPREC
-| FUN fdl = separated_list(COMMA, fundef) {
+| FUN fdl = separated_nonempty_list(AND, fundef) {
   RecFunctions fdl
 } 
 
