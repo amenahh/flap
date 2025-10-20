@@ -22,6 +22,7 @@
 %right TEST
 %right RARROW 
 %right PVIRGULE 
+%right FUNBLOCK_PREC
 %right AFFECTATION
 
 %nonassoc CONST_ALONE      
@@ -127,14 +128,13 @@ tdefinitioniter:
 } 
 
 
-
 fundef:
 | var_id = located(IDENTIFICATEUR) p= located(pattern) EQUAL e=located(expr) {
   ((Position.map (fun v -> Id v ) var_id),None,FunctionDefinition (p,e))
-}  %prec PVIRGULE
+}  %prec FUNBLOCK_PREC
 | DPOINTS ts = located(typeScheme) var_id = located(IDENTIFICATEUR) p= located(pattern) EQUAL e=located(expr) {
   ((Position.map (fun v -> Id v ) var_id),Some ts,FunctionDefinition (p,e))
-}%prec PVIRGULE
+}%prec FUNBLOCK_PREC
 
 
 expr_atomic:
