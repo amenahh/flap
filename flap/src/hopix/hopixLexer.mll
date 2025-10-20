@@ -156,9 +156,7 @@ rule token = parse
     else error lexbuf "Non printable char"
   }
 
-  (* | identificateur as ident { IDENTIFICATEUR(ident) }
-  | variable as v { VARIABLE(v) }
-  | constr_id as c { CONST_ID(c) } *)
+
 
 
   (** Lexing error. *)

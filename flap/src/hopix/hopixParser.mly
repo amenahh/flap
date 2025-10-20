@@ -1,15 +1,14 @@
 %{ (* -*- tuareg -*- *)
 
   open HopixAST
-  (*
+  
   open Position
-   open Mint
-   *)
+  
 %}
 
 %token EOF IF WHILE LET FUN TYPE EXTERN AND MATCH THEN ELSE DO UNTIL FOR FROM TO
 %token LPAR RPAR LCROCHET RCROCHET COMMA RARROW DIS LACC RACC AFFECTATION BACKSLASH
-%token EQUAL LCHEVRON RCHEVRON DPOINTS BVERTICALE MOINS EXCLAMATION PLUS REF PREFIX
+%token EQUAL LCHEVRON RCHEVRON DPOINTS BVERTICALE MOINS EXCLAMATION PLUS REF 
 %token BHORIZONTALE DIV STAR LT GT DRARROW EQ OR LTE DOT PVIRGULE  TEST 
 
 %token <string> VARIABLE
@@ -210,7 +209,6 @@ app_chaine:
  
 expr:
 
-// |ea = expr_atomic { ea }
 |ac = app_chaine { ac }
 
 
@@ -231,7 +229,7 @@ expr:
   in
   Apply(y,e1) 
 }
-//y'avait les record ici jlai tej en haut
+
 
 | IF LPAR e1 = located(expr) RPAR THEN LACC e2 = located(expr) RACC ELSE LACC e3 = located(expr) RACC {
   IfThenElse(e1,e2,e3)
