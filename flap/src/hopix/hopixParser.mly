@@ -10,7 +10,7 @@
 %token EOF IF WHILE LET FUN TYPE EXTERN AND MATCH THEN ELSE DO UNTIL FOR FROM TO
 %token LPAR RPAR LCROCHET RCROCHET COMMA RARROW DIS LACC RACC AFFECTATION BACKSLASH
 %token EQUAL LCHEVRON RCHEVRON DPOINTS BVERTICALE MOINS EXCLAMATION PLUS REF PREFIX
-%token BHORIZONTALE DIV STAR LT GT DRARROW EQ OR LTE DOT PVIRGULE VDEFPREC TEST 
+%token BHORIZONTALE DIV STAR LT GT DRARROW EQ OR LTE DOT PVIRGULE  TEST 
 
 %token <string> VARIABLE
 %token <string> CONST_ID
@@ -22,13 +22,14 @@
 
 %right TEST
 %right RARROW 
+%right PVIRGULE 
 %right AFFECTATION
 
 %nonassoc CONST_ALONE      
 %nonassoc LPAR    
 
-%right PVIRGULE 
-%nonassoc VDEFPREC
+
+
 %left DPOINTS
 %left PLUS MOINS
 %left STAR DIV
@@ -115,13 +116,13 @@ tdefinitioniter:
   (Position.map (fun v -> KId v) constr_id,[])::td
 }
 
-vdefinition:
+%inline vdefinition:
 | LET var_id=located(IDENTIFICATEUR) EQUAL exp=located(expr) {
   SimpleValue (Position.map (fun v -> Id v) var_id,None,exp)
-} %prec VDEFPREC
+} 
 | LET var_id=located(IDENTIFICATEUR) DPOINTS ts = located(typeScheme) EQUAL exp=located(expr){
   SimpleValue (Position.map (fun v -> Id v) var_id,Some ts,exp)
-}  %prec VDEFPREC
+} 
 | FUN fdl = separated_nonempty_list(AND, fundef) {
   RecFunctions fdl
 } 
@@ -252,7 +253,7 @@ expr:
 }
 
 | v = vdefinition PVIRGULE e=located(expr) 
-// %prec VDEFPREC
+
 {
   Define(v,e)
 } 
