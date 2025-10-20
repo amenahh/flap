@@ -36,7 +36,7 @@
 %left AND OR
 %left GT LT LTE EQ DRARROW
 
-%right PREFIX
+
 
 
 %left DIS BVERTICALE
@@ -189,13 +189,19 @@ expr_atomic:
 
 
 app_chaine:
+| REF e= located(expr_atomic) {
+  Ref(e)
+}
+| EXCLAMATION e=located(expr_atomic) {
+  Read(e)
+}
 | e=located(expr_atomic) DOT label_id=located(IDENTIFICATEUR) LCHEVRON tl=separated_list(COMMA,located(htype)) RCHEVRON {
   Field(e,Position.map (fun v -> LId v) label_id, Some tl)
 }
 | e=located(expr_atomic) DOT label_id=located(IDENTIFICATEUR) {
   Field(e,Position.map (fun v -> LId v) label_id, None)
 }
-| e = located(app_chaine) e1 =located(expr_atomic) {
+| e = located(app_chaine) e1 =located(expr_atomic){
   Apply(e,e1)
 }
 | e = expr_atomic {
@@ -206,6 +212,7 @@ expr:
 
 // |ea = expr_atomic { ea }
 |ac = app_chaine { ac }
+
 
 |constr_id=located(CONST_ID) LCHEVRON tl=separated_list(COMMA,located(htype)) RCHEVRON LPAR el = separated_nonempty_list(COMMA,located(expr)) RPAR{
   Tagged ((Position.map (fun v -> KId v) constr_id),Some tl,el)
@@ -265,12 +272,7 @@ expr:
 | e= located(expr) AFFECTATION e1 = located(expr) {
   Assign(e,e1)
 }
-| REF e= located(expr) %prec PREFIX {
-  Ref(e)
-}
-| EXCLAMATION e=located(expr) %prec PREFIX {
-  Read(e)
-}
+
 
 
 
