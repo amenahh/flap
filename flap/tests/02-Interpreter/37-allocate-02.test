@@ -1,0 +1,8 @@
+{
+    "source": "37-allocate-02.eval.hopix",
+    "arguments" : ["-s", "hopix", "--run", "true", "--dry", "true",
+                   "--unsafe", "true", "--sexp-in", "true"],
+    "exitcode": 0,
+    "expectation": ["Expect", {}],
+    "tags": ["eval"]
+}

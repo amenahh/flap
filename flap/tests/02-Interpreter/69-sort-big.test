@@ -1,0 +1,8 @@
+{
+    "source": "69-sort-big.eval.hopix",
+    "arguments" : ["-s", "hopix", "--run", "true", "--dry", "true",
+                   "--unsafe", "true", "--sexp-in", "true"],
+    "exitcode": 0,
+    "expectation": ["Expect", {}],
+    "tags": ["eval"]
+}

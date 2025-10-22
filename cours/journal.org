@@ -1,4 +1,4 @@
-#+TITLE: Compilation 2024/2025 -- Journal du cours
+#+TITLE: Compilation 2025/2026 -- Journal du cours
 #+AUTHOR: Adrien Guatto
 #+EMAIL: guatto@irif.org
 #+LANGUAGE: fr
@@ -44,3 +44,9 @@
    Voir les [[file:cours-parsing.pdf][diapos]].
 ** Projet
    Le jalon 1 est publié.
+* Cours 04 <2025-10-03>
+  Voir les transparents au sujet de
+  l'[[file:cours-interpretation.pdf][interprétation]].
+* Cours 05 <2025-10-10>
+  On continue à discuter de l'interprétation, jusqu'au début du traitement des
+  références.

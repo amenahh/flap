@@ -1,0 +1,10 @@
+let test =
+    match (K (K ("OK"))) {
+    | K (x & K (y)) ->
+      match (x) {
+      | K (z) ->
+         print_string ("This test is ");
+         print_string (y);
+         print_string (".\n")
+      }
+    }
