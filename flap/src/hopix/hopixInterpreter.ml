@@ -318,8 +318,18 @@ let rec evaluate runtime ast =
                         E, M ⊢ dv ⇒ E', M'
 
 *)
-and definition runtime d =
-failwith "Students! This is your job!"
+and definition runtime d = 
+  match d with 
+  | DefineValue vd -> valDefinition runtime vd 
+  | _ -> failwith "Pas de défintitions"
+
+and valDefinition runtime vd =
+  match vd with 
+  | SimpleValue (id,_,e) -> let x = expression' runtime.environment runtime.memory e in bind id x runtime.environment
+  | RecFunctions (id,_,l) -> let x = List.fold_left definition runtime l in bind id x runtime.environment
+
+
+(* failwith "Students! This is your job!" *)
 
 and expression' environment memory e =
   expression (position e) environment memory (value e)
@@ -331,7 +341,10 @@ and expression' environment memory e =
    and E = [runtime.environment], M = [runtime.memory].
 *)
 and expression _ environment memory =
-failwith "Students! This is your job!"
+  
+
+
+failwith "Students! This is your job!" 
 
 (** This function returns the difference between two runtimes. *)
 and extract_observable runtime runtime' =
