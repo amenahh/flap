@@ -318,18 +318,34 @@ let rec evaluate runtime ast =
                         E, M ⊢ dv ⇒ E', M'
 
 *)
+
 and definition runtime d = 
-  match d with 
-  | DefineValue vd -> valDefinition runtime vd 
-  | _ -> failwith "Pas de défintitions"
+  let def = Position.value d in
+  match def with
+  | DefineValue vd -> 
+    { runtime with environment =  valDefinition runtime vd }
+    
+  | _ -> runtime
+
 
 and valDefinition runtime vd =
   match vd with 
-  | SimpleValue (id,_,e) -> let x = expression' runtime.environment runtime.memory e in bind id x runtime.environment
-  | RecFunctions (id,_,l) -> let x = List.fold_left definition runtime l in bind id x runtime.environment
+  | SimpleValue (id,_,e) -> 
+    let valID = Position.value id in
+    let valeur =  expression' runtime.environment runtime.memory e in 
+   Environment.bind  runtime.environment valID valeur
+  | RecFunctions (l) ->  
+    failwith "failure in valdefinition"
 
+    (* List.fold_left valPolymorphic runtime l *)
 
-(* failwith "Students! This is your job!" *)
+and valPolymorphic runtime element =
+  match element with
+  | (id,_,FunctionDefinition(pattern,expr)) ->  
+    (*
+    idée mais pas sûre faire appel à la fct pr pattern puis utiliser une monade pr passer à expr ??
+    *)
+    failwith "failure in valPolymorphic"
 
 and expression' environment memory e =
   expression (position e) environment memory (value e)
@@ -340,11 +356,31 @@ and expression' environment memory e =
 
    and E = [runtime.environment], M = [runtime.memory].
 *)
-and expression _ environment memory =
-  
 
+   and expression _ environment memory e =
+    match e with
+      | Literal x -> valLitteral(x)
+      | Variable(id,_) -> 
+        let valId = Position.value id in
+        let posId = Position.position id in
+          Environment.lookup  posId valId environment 
+      | Apply(e1,e2) ->
+        let e1Value = expression' environment memory e1 in
+        let e2Value = expression' environment memory e2 in
+        valApply e1Value e2Value memory
+      | _ -> failwith "failure in expression" 
 
-failwith "Students! This is your job!" 
+and valApply e1 e2 m = 
+  match e1 with
+  | VPrimitive(_,f) -> f m e2
+  | _ -> failwith "ouch"
+
+and valLitteral l =
+  let lit = Position.value l in
+  match lit with
+  | LInt i -> VInt(i)
+  | LString(s) -> VString(s)
+  | LChar(c) -> VChar(c)
 
 (** This function returns the difference between two runtimes. *)
 and extract_observable runtime runtime' =
@@ -367,3 +403,49 @@ and extract_observable runtime runtime' =
 (** This function displays a difference between two runtimes. *)
 let print_observable (_ : runtime) observation =
   Environment.print observation.new_memory observation.new_environment
+
+
+
+
+
+
+
+
+
+
+
+ (* |  *)
+      (* | Assign(eLoc1,eLoc2) ->
+        let e1 = expression' environment memory eLoc1 in
+        let e2 = expression' environment memory eLoc2 in
+        match e1 with
+        | VLocation a ->  *)
+        (* TODO retrouver le bloc ds lequel on ft le write *)
+      
+        (* | Ref(exprLoc) -> *)
+        (* let valeur = expression' environment memory exprLoc in *)
+        (* let alloue = Memory.allocate memory  valeur in *)
+        (* VLocation(alloue) *) (* TODO savoir la taille à allouer *)
+      
+      (* | Tagged(c,_,expr) -> 
+        let constr = Position.value c in
+        let resExpr = List.fold_left expression' [] memory expr in
+        VTagged(constr,resExpr) *)
+      (* | Record(l,_) -> VRecord(l) *)
+
+
+
+  (* failwith "Students! This is your job!" *)
+
+
+
+
+  (* let t = Position.value id in *)
+    (* let env = runtime.environment in *)
+    (* Environment.bind x t env *)
+    (* failwith "Pas de définition" *)
+    (* failwith "Pas de définition"   *)
+    (* let x = List.fold_left definition runtime l  *)
+  (* in  *)
+    (* Environment.bind x runtime.environment *)
+    (* x   *)
