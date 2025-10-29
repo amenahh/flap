@@ -335,17 +335,17 @@ and valDefinition runtime vd =
     let valeur =  expression' runtime.environment runtime.memory e in 
    Environment.bind  runtime.environment valID valeur
   | RecFunctions (l) ->  
-    failwith "failure in valdefinition"
+    failwith "RecFuctions"
 
     (* List.fold_left valPolymorphic runtime l *)
 
-and valPolymorphic runtime element =
+(* and valPolymorphic runtime element =
   match element with
   | (id,_,FunctionDefinition(pattern,expr)) ->  
     (*
     idée mais pas sûre faire appel à la fct pr pattern puis utiliser une monade pr passer à expr ??
     *)
-    failwith "failure in valPolymorphic"
+    failwith "failure in valPolymorphic" *)
 
 and expression' environment memory e =
   expression (position e) environment memory (value e)
@@ -364,11 +364,143 @@ and expression' environment memory e =
         let valId = Position.value id in
         let posId = Position.position id in
           Environment.lookup  posId valId environment 
+     
       | Apply(e1,e2) ->
         let e1Value = expression' environment memory e1 in
         let e2Value = expression' environment memory e2 in
         valApply e1Value e2Value memory
-      | _ -> failwith "failure in expression" 
+      | IfThenElse(e1,e2,e3) -> 
+        let e1Value = expression' environment memory e1 in
+        valIfThenElse e1Value e2 e3 environment memory
+      | Sequence(l) -> sequence_val l environment memory
+      | Tagged(c,_,l) ->
+        let cval = Position.value c in
+        let liste = tuple_val l environment memory in
+        VTagged(cval,liste)
+      | Tuple(l) -> 
+        let liste = tuple_val l environment memory in
+        VTuple(liste)
+      | Record(l,_) -> 
+        let liste = record_val l environment memory in
+        VRecord(liste)
+      
+      | Field(e,li,_) -> 
+        field_val e li environment memory
+      
+      | While(e1,e2) -> while_val e1 e2 environment memory
+
+      | Define(vd,e) ->
+        let r_actuelle = { environment; memory} in
+        let  r_env = valDefinition r_actuelle vd in
+        expression' r_env r_actuelle.memory e
+      (* revoir la mémoire *)
+      | For(_,_,_,_) -> failwith "For"
+            
+      | Ref(exprLoc) ->
+        let valeur = expression' environment memory exprLoc in
+        (* TODO savoir la taille à allouer  *)
+        let alloue = Memory.allocate memory Mint.one valeur  in
+        VLocation(alloue) 
+
+      
+      | Assign(eLoc1,eLoc2) ->
+        let e1 = expression' environment memory eLoc1 in
+        let e2 = expression' environment memory eLoc2 in
+        assign_val e1 e2 memory
+        (* TODO retrouver le bloc ds lequel on ft le write *)
+      
+      
+      | Read(exprLoc) -> 
+        let valeur = expression' environment memory exprLoc in
+        read_val memory valeur
+      
+      | Case(_,_) -> failwith "Case"
+
+      |Fun(_) -> failwith "Fun expression"
+
+      | TypeAnnotation(_,_) -> failwith "Ano"
+
+and assign_val e1 e2 memory =
+  match e1 with
+  | VLocation(addr) -> 
+    let b = Memory.dereference memory addr in
+    Memory.write b Mint.zero e2;
+    VUnit
+  | _ -> failwith "Pas une référence" 
+
+and read_val  memory valeur =
+    match  valeur with
+    | VLocation(addr) -> 
+      let b = Memory.dereference memory addr in
+      Memory.read b Mint.zero
+      (* pq c zero ? j'aurais mis Mint.one *)
+    | _ -> failwith "C'est pas une référence"
+
+(* TODO pas tester encore le while *)
+and while_val e1 e2 env m =
+  let v = expression' env m e1 in
+  match v with
+  | ptrue -> 
+    let r =expression' env m e2 in 
+    while_val e1 e2 env m
+  | pfalse -> VUnit
+
+and field_val e li environment memory =
+  let valE = Position.value e in
+  match valE with
+  | Field(e,li,_) -> 
+        field_val e li environment memory
+  | Variable(id,_) -> 
+    let pos = Position.position id in
+    let valID = Position.value id in
+    let liste = Environment.lookup pos valID environment in (*on trouve le record  *)
+    let lab = Position.value li in (* on prend le champ *)
+    test liste lab
+ 
+  | _ -> 
+    (* expression' environment memory e *)
+    failwith "c pas une var"
+
+and test l lab  = 
+  match l with
+  | VRecord(liste) -> trouve liste lab
+  | _ -> failwith "pas possible"
+
+and trouve l lab =
+  match  l with
+  |  [] -> failwith "pas trouve"
+  | (v,t)::tl-> if v = lab then t else trouve tl lab
+
+and record_val l env memory = 
+  match l with
+  | [] -> []
+  | (lab,expr)::tl -> 
+    let valE = expression' env memory expr in
+    let valLab = Position.value lab in
+    (valLab,valE):: record_val tl env memory
+
+and tuple_val l env memory =
+  match l with
+  | [] -> []
+  | h::tl -> 
+    let valH = expression' env memory h in
+    valH::tuple_val tl env memory
+
+and sequence_val l env memory =
+  match  l with
+  | [] -> 
+    VUnit
+    (* TODO à revoir *)
+  | [h] -> expression' env memory h 
+  | h::tl -> 
+    let v = expression' env memory h in 
+    sequence_val tl env memory 
+
+
+and valIfThenElse v e2 e3 env memory =
+  match v with
+  | ptrue -> expression' env memory e2
+  | pfalse -> expression' env memory e3
 
 and valApply e1 e2 m = 
   match e1 with
@@ -404,48 +536,3 @@ and extract_observable runtime runtime' =
 let print_observable (_ : runtime) observation =
   Environment.print observation.new_memory observation.new_environment
 
-
-
-
-
-
-
-
-
-
-
- (* |  *)
-      (* | Assign(eLoc1,eLoc2) ->
-        let e1 = expression' environment memory eLoc1 in
-        let e2 = expression' environment memory eLoc2 in
-        match e1 with
-        | VLocation a ->  *)
-        (* TODO retrouver le bloc ds lequel on ft le write *)
-      
-        (* | Ref(exprLoc) -> *)
-        (* let valeur = expression' environment memory exprLoc in *)
-        (* let alloue = Memory.allocate memory  valeur in *)
-        (* VLocation(alloue) *) (* TODO savoir la taille à allouer *)
-      
-      (* | Tagged(c,_,expr) -> 
-        let constr = Position.value c in
-        let resExpr = List.fold_left expression' [] memory expr in
-        VTagged(constr,resExpr) *)
-      (* | Record(l,_) -> VRecord(l) *)
-
-
-
-  (* failwith "Students! This is your job!" *)
-
-
-
-
-  (* let t = Position.value id in *)
-    (* let env = runtime.environment in *)
-    (* Environment.bind x t env *)
-    (* failwith "Pas de définition" *)
-    (* failwith "Pas de définition"   *)
-    (* let x = List.fold_left definition runtime l  *)
-  (* in  *)
-    (* Environment.bind x runtime.environment *)
-    (* x   *)
