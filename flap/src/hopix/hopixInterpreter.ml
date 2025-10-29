@@ -364,7 +364,6 @@ and expression' environment memory e =
         let valId = Position.value id in
         let posId = Position.position id in
           Environment.lookup  posId valId environment 
-     
       | Apply(e1,e2) ->
         let e1Value = expression' environment memory e1 in
         let e2Value = expression' environment memory e2 in
@@ -420,10 +419,10 @@ and expression' environment memory e =
 
       | TypeAnnotation(_,_) -> failwith "Ano"
 
-and assign_val e1 e2 memory =
+and assign_val e1 e2 mem =
   match e1 with
   | VLocation(addr) -> 
-    let b = Memory.dereference memory addr in
+    let b = Memory.dereference mem addr in
     Memory.write b Mint.zero e2;
     VUnit
   | _ -> failwith "Pas une référence" 
@@ -439,11 +438,10 @@ and read_val  memory valeur =
 (* TODO pas tester encore le while *)
 and while_val e1 e2 env m =
   let v = expression' env m e1 in
-  match v with
-  | ptrue -> 
-    let r =expression' env m e2 in 
-    while_val e1 e2 env m
-  | pfalse -> VUnit
+  if value_as_bool v then (
+    let r = expression' env m e2 in 
+    expression (Position.position e1) env m (While(e1,e2)))
+  else VUnit
 
 and field_val e li environment memory =
   let valE = Position.value e in
