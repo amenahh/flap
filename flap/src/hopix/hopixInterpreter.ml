@@ -388,13 +388,19 @@ and expression' environment memory e =
       
       | While(e1,e2) -> while_val e1 e2 environment memory
 
+      | For(id,e1,e2,e3) -> 
+        let from =  expression' environment memory e1 in 
+        let toval = expression' environment memory e2 in 
+        let valID = Position.value id in
+        let newEnv = Environment.bind environment valID from in
+        for_val id from toval e3 newEnv memory
+  
       | Define(vd,e) ->
         let r_actuelle = { environment; memory} in
         let  r_env = valDefinition r_actuelle vd in
         expression' r_env r_actuelle.memory e
       (* revoir la mémoire *)
-      | For(_,_,_,_) -> failwith "For"
-            
+             
       | Ref(exprLoc) ->
         let valeur = expression' environment memory exprLoc in
         (* TODO savoir la taille à allouer  *)
@@ -442,6 +448,21 @@ and while_val e1 e2 env m =
     let r = expression' env m e2 in 
     expression (Position.position e1) env m (While(e1,e2)))
   else VUnit
+
+and for_val id from toval expr env m =
+  let pos = Position.position id in
+  let valID = Position.value id in
+  if (from) < toval then 
+    let valE = expression' env m expr in 
+    Environment.update pos valID env (VInt (Mint.add (getInt from ) Mint.one));
+    for_val id (VInt(Mint.add (getInt from ) Mint.one)) toval expr env m   
+  else 
+    VUnit
+
+and getInt value = 
+      match value with
+     |VInt mint -> mint 
+     | _ -> failwith "Error not VInt in for" 
 
 and field_val e li environment memory =
   let valE = Position.value e in
