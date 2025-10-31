@@ -444,9 +444,9 @@ and read_val  memory valeur =
 (* TODO pas tester encore le while *)
 and while_val e1 e2 env m =
   let v = expression' env m e1 in
-  if value_as_bool v then (
+  if value_as_bool v then 
     let r = expression' env m e2 in 
-    expression (Position.position e1) env m (While(e1,e2)))
+    while_val e1 e2 env m
   else VUnit
 
 and for_val id from toval expr env m =
