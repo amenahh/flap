@@ -419,11 +419,45 @@ and expression' environment memory e =
         let valeur = expression' environment memory exprLoc in
         read_val memory valeur
       
-      | Case(_,_) -> failwith "Case"
+      | Case(exprLoc,branchlist) -> 
+        let valExpr = expression' environment memory exprLoc in 
+        let valMatch = List.find_map (fun x -> val_branch valExpr environment memory (Position.value x) ) branchlist 
+        in (match valMatch with 
+        |Some v -> v
+        |None -> failwith "Case"
+        )
 
       |Fun(_) -> failwith "Fun expression"
 
       | TypeAnnotation(_,_) -> failwith "Ano"
+
+and val_pattern environment valExpression pattern = 
+  match pattern,valExpression with 
+  | PTaggedValue (cons,_,plist),VTagged(cval,listval) -> 
+    if (Position.value cons) = cval then 
+      list_val_pattern environment listval plist
+    else None 
+  | PTypeAnnotation(pl,_),_ -> val_pattern  environment valExpression (Position.value pl)
+  | PRecord (_,_),VRecord(_) -> failwith "Precord"
+  | PVariable(id),_ ->
+    let valId = Position.value id in Some (Environment.bind  environment valId valExpression )
+  | PWildcard,_ -> Some environment
+  | PLiteral(l), vlit -> 
+    if (valLitteral l) = vlit then Some environment
+    else None 
+  | PTuple(l),VTuple(vl) -> 
+    list_val_pattern  environment vl l 
+  | POr(pl),_ -> pattern_or pl valExpression environment
+  | PAnd(pl),_ -> pattern_and pl valExpression environment
+  | _,_ -> None
+
+
+and val_branch valExpression environment memory = function
+  | Branch(locPat,locExpr) ->  let v = val_pattern environment valExpression (Position.value locPat) in 
+  match v with 
+  | Some newEnv -> Some (expression' newEnv memory locExpr)
+  | None -> None
+  
 
 and assign_val e1 e2 mem =
   match e1 with
@@ -504,6 +538,57 @@ and tuple_val l env memory =
   | h::tl -> 
     let valH = expression' env memory h in
     valH::tuple_val tl env memory
+
+and list_val_pattern env valExpression lpat= 
+  match lpat,valExpression with
+  | [],[] -> Some env
+  | hp::tlp, hv::tlv  -> 
+    let p = Position.value hp in 
+    let valEnv = val_pattern env hv p in
+    (
+    match valEnv with
+    | Some e ->  list_val_pattern e tlv tlp 
+    | None -> None
+    )
+  | _,_ -> None
+
+and record_val_pattern env valExpression lpat= 
+  match lpat,valExpression with
+  | [],[] -> Some env
+  | (locLabP,exprp)::tlp, (labv,exprv)::tlv  -> 
+    let labP  = Position.value locLabP in 
+    if labP = labv then (
+      let p = Position.value exprp in
+      let valEnv = val_pattern env exprv p in
+      (
+      match valEnv with
+      | Some e ->  record_val_pattern e tlv tlp
+      | None -> None
+      )
+    )
+    else None 
+  | _,_ -> None  
+and pattern_or l v env =
+    match l with
+    | [] -> failwith "pas possible"
+    | [p] ->
+      val_pattern env  v (Position.value p) 
+    | p::tl -> 
+      let nv_env = val_pattern env  v (Position.value p)  in
+      match nv_env with
+      | Some _ -> nv_env
+      | None -> pattern_and tl v env  
+
+and pattern_and l v env =
+    match l with
+    | [] -> failwith "pas possible"
+    | [p] ->
+      val_pattern env  v (Position.value p) 
+    | p::tl -> 
+      let nv_env = val_pattern env  v (Position.value p)  in
+      match nv_env with
+      | Some e -> pattern_and tl v e
+      | None -> None
 
 and sequence_val l env memory =
   match  l with
