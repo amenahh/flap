@@ -388,13 +388,20 @@ and expression' environment memory e =
       
       | While(e1,e2) -> while_val e1 e2 environment memory
 
-      | For(id,e1,e2,e3) -> 
+      (* | For(id,e1,e2,e3) -> 
         let from =  expression' environment memory e1 in 
         let toval = expression' environment memory e2 in 
         let valID = Position.value id in
         let newEnv = Environment.bind environment valID from in
-        for_val id from toval e3 newEnv memory
-  
+        for_val id from toval e3 newEnv memory *)
+
+       | For(x,e1,e2,e3) -> 
+        let v1 = expression' environment memory e1 in
+        let v2 = expression' environment memory e2 in
+        val_for x v1 v2 e3 environment memory
+        (* failwith "For" *)
+
+      
       | Define(vd,e) ->
         let r_actuelle = { environment; memory} in
         let  r_env = valDefinition r_actuelle vd in
@@ -451,6 +458,10 @@ and val_pattern environment valExpression pattern =
   | PAnd(pl),_ -> pattern_and pl valExpression environment
   | _,_ -> None
 
+and val_v v =
+  match v with
+  | VInt(i) -> i
+  | _ -> failwith "Pas un Mint"
 
 and val_branch valExpression environment memory = function
   | Branch(locPat,locExpr) ->  let v = val_pattern environment valExpression (Position.value locPat) in 
@@ -483,15 +494,25 @@ and while_val e1 e2 env m =
     while_val e1 e2 env m
   else VUnit
 
-and for_val id from toval expr env m =
+(* and for_val id from toval expr env m =
   let pos = Position.position id in
   let valID = Position.value id in
-  if (from) < toval then 
+  if (val_v from) < (val_v toval) then 
     let valE = expression' env m expr in 
     Environment.update pos valID env (VInt (Mint.add (getInt from ) Mint.one));
     for_val id (VInt(Mint.add (getInt from ) Mint.one)) toval expr env m   
   else 
-    VUnit
+    VUnit *)
+  and val_for x v1 v2 e3 env memory =
+  if (val_v v1) > (val_v v2) then VUnit
+  else
+    let val_x = Position.value x in
+    let nv_env = Environment.bind env val_x v1 in
+    let v3 = 
+      expression' nv_env memory e3 in
+    let i = Mint.add (val_v v1) Mint.one in
+    let nv_v1 = VInt(i) in
+    val_for x nv_v1 v2 e3 nv_env memory
 
 and getInt value = 
       match value with
@@ -499,26 +520,13 @@ and getInt value =
      | _ -> failwith "Error not VInt in for" 
 
 and field_val e li environment memory =
-  let valE = Position.value e in
-  match valE with
-  | Field(e,li,_) -> 
-        field_val e li environment memory
-  | Variable(id,_) -> 
-    let pos = Position.position id in
-    let valID = Position.value id in
-    let liste = Environment.lookup pos valID environment in (*on trouve le record  *)
-    let lab = Position.value li in (* on prend le champ *)
-    test liste lab
- 
-  | _ -> 
-    (* expression' environment memory e *)
-    failwith "c pas une var"
-
-and test l lab  = 
-  match l with
-  | VRecord(liste) -> trouve liste lab
-  | _ -> failwith "pas possible"
-
+  (* expression' environment memory e *)
+  let value = expression' environment memory e in 
+  match value  with 
+  |VRecord(list) -> 
+    trouve list (Position.value li)
+  |_ -> failwith "Field"  
+  
 and trouve l lab =
   match  l with
   |  [] -> failwith "pas trouve"
@@ -577,7 +585,7 @@ and pattern_or l v env =
       let nv_env = val_pattern env  v (Position.value p)  in
       match nv_env with
       | Some _ -> nv_env
-      | None -> pattern_and tl v env  
+      | None -> pattern_or tl v env  
 
 and pattern_and l v env =
     match l with
@@ -602,9 +610,8 @@ and sequence_val l env memory =
 
 
 and valIfThenElse v e2 e3 env memory =
-  match v with
-  | ptrue -> expression' env memory e2
-  | pfalse -> expression' env memory e3
+  if value_as_bool v then expression' env memory e2
+  else expression' env memory e3
 
 and valApply e1 e2 m = 
   match e1 with
