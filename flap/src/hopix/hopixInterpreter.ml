@@ -388,17 +388,10 @@ and expression' environment memory e =
       
       | While(e1,e2) -> while_val e1 e2 environment memory
 
-      (* | For(id,e1,e2,e3) -> 
-        let from =  expression' environment memory e1 in 
-        let toval = expression' environment memory e2 in 
-        let valID = Position.value id in
-        let newEnv = Environment.bind environment valID from in
-        for_val id from toval e3 newEnv memory *)
-
-       | For(x,e1,e2,e3) -> 
+      | For(x,e1,e2,e3) -> 
         let v1 = expression' environment memory e1 in
         let v2 = expression' environment memory e2 in
-        val_for x v1 v2 e3 environment memory
+        for_val x v1 v2 e3 environment memory
         (* failwith "For" *)
 
       
@@ -445,7 +438,7 @@ and val_pattern environment valExpression pattern =
       list_val_pattern environment listval plist
     else None 
   | PTypeAnnotation(pl,_),_ -> val_pattern  environment valExpression (Position.value pl)
-  | PRecord (_,_),VRecord(_) -> failwith "Precord"
+  | PRecord (pl,_),VRecord(vl) -> record_val_pattern environment vl pl
   | PVariable(id),_ ->
     let valId = Position.value id in Some (Environment.bind  environment valId valExpression )
   | PWildcard,_ -> Some environment
@@ -494,25 +487,16 @@ and while_val e1 e2 env m =
     while_val e1 e2 env m
   else VUnit
 
-(* and for_val id from toval expr env m =
+ and for_val id from toval expr env m =
   let pos = Position.position id in
   let valID = Position.value id in
-  if (val_v from) < (val_v toval) then 
+  if (val_v from) <= (val_v toval) then 
     let valE = expression' env m expr in 
     Environment.update pos valID env (VInt (Mint.add (getInt from ) Mint.one));
     for_val id (VInt(Mint.add (getInt from ) Mint.one)) toval expr env m   
   else 
-    VUnit *)
-  and val_for x v1 v2 e3 env memory =
-  if (val_v v1) > (val_v v2) then VUnit
-  else
-    let val_x = Position.value x in
-    let nv_env = Environment.bind env val_x v1 in
-    let v3 = 
-      expression' nv_env memory e3 in
-    let i = Mint.add (val_v v1) Mint.one in
-    let nv_v1 = VInt(i) in
-    val_for x nv_v1 v2 e3 nv_env memory
+    VUnit 
+    
 
 and getInt value = 
       match value with
