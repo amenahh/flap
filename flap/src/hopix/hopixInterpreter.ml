@@ -335,15 +335,12 @@ and valDefinition runtime vd =
    Environment.bind  runtime.environment valID valeur
   
   | RecFunctions (l) ->
-    let newEnv = poly_list l runtime.environment 
-    in  poly_update l newEnv;
+    (* Binding *)
+    let newEnv = List.fold_left valPolymorphic runtime.environment l
+    in  
+    (* Update *)
+    List.iter (fun e -> valPolymorphic_update e newEnv) l ;
     newEnv
-  
-  and poly_list l env  =
-    List.fold_left valPolymorphic env l
-
-  and poly_update l env  =
-    List.iter (fun e -> valPolymorphic_update e env) l 
       
   and valPolymorphic_update expr env=
     match expr with
@@ -413,7 +410,6 @@ and expression' environment memory e =
              
       | Ref(exprLoc) ->
         let valeur = expression' environment memory exprLoc in
-        (* TODO savoir la taille à allouer  *)
         let alloue = Memory.allocate memory Mint.one valeur  in
         VLocation(alloue) 
 
