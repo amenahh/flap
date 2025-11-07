@@ -1,0 +1,6 @@
+Error (typechecking)
+  Type mismatch.
+Expected:
+  t
+Given:
+  t -> t

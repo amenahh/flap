@@ -1,0 +1,8 @@
+{
+    "source": "38-pattern-matching-02.bad.hopix",
+    "arguments" : ["-s", "hopix", "--types", "true", "--run", "false", "--dry", "true",
+                   "--loc", "false", "--unsafe", "false", "--sexp-in", "true"],
+    "exitcode": 1,
+    "expectation": ["Expect", {}],
+    "tags": ["typing"]
+}

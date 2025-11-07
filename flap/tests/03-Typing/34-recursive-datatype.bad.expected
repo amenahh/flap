@@ -1,0 +1,6 @@
+Error (typechecking)
+  Type mismatch.
+Expected:
+  l
+Given:
+  int
