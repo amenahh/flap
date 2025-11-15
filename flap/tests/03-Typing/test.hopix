@@ -1,0 +1,3 @@
+type s = C (int)
+fun : int -> s f (n : int) =
+  C <  >(n, (\ (u : unit) -> (f ((n + 1))) : unit -> s))
