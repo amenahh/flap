@@ -1,6 +1,7 @@
 (** This module implements a bidirectional type checker for Hopix. *)
 
 open HopixAST
+open HopixTypes
 
 (** Error messages *)
 
@@ -36,14 +37,11 @@ let check_type_scheme :
       HopixTypes.aty_scheme * HopixTypes.typing_environment
   = fun env pos (ForallTy (ts, ty)) -> 
     let tv = List.map (fun x -> Position.value x ) ts in 
-    let aty = internalize_ty env (Position.value ty) in 
+    let aty = internalize_ty env ty in 
     let newEnv = bind_type_variables pos env tv in
-    ((Scheme tv , aty),newEnv)
+    ((Scheme (tv,aty)),newEnv)
 
-    
-
-
-  failwith "Students! This is your job!"
+  
 
 let synth_literal : HopixAST.literal -> HopixTypes.aty =
   fun l ->
@@ -84,6 +82,7 @@ and check_value_definition :
       HopixAST.value_definition ->
       HopixTypes.typing_environment
   = fun env def ->
+    
     
   failwith "Students! This is your job!"
 
