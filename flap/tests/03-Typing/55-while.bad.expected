@@ -1,0 +1,6 @@
+Error (typechecking)
+  Type mismatch.
+Expected:
+  mut<int>
+Given:
+  mut<string>

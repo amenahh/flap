@@ -1,0 +1,2 @@
+Error (typechecking)
+  This expression has type int which should be a function type.

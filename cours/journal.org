@@ -50,3 +50,7 @@
 * Cours 05 <2025-10-10>
   On continue à discuter de l'interprétation, jusqu'au début du traitement des
   références.
+* Cours 06 <2025-10-17>
+  On termine l'interprétation.
+
+  On débute la discussion du [[file:cours-typage.pdf][typage]].
