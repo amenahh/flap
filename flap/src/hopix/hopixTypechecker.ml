@@ -37,11 +37,10 @@ let check_type_scheme :
       HopixTypes.aty_scheme * HopixTypes.typing_environment
   = fun env pos (ForallTy (ts, ty)) -> 
     let tv = List.map (fun x -> Position.value x ) ts in 
-    let aty = internalize_ty env ty in 
     let newEnv = bind_type_variables pos env tv in
+    let aty = internalize_ty env ty in 
     ((Scheme (tv,aty)),newEnv)
 
-  
 
 let synth_literal : HopixAST.literal -> HopixTypes.aty =
   fun l ->
@@ -81,10 +80,30 @@ and check_value_definition :
       HopixTypes.typing_environment ->
       HopixAST.value_definition ->
       HopixTypes.typing_environment
-  = fun env def ->
+  = fun env def -> match def with
+  | SimpleValue(locId,opTyScheme,locExpr) -> 
+    (match opTyScheme with
     
-    
-  failwith "Students! This is your job!"
+    |Some locTyScheme -> 
+      (
+      let tySchemeEnv = check_type_scheme env (Position.position locTyScheme) (Position.value locTyScheme) 
+      in match tySchemeEnv with
+      |(atyScheme,newEnv) -> 
+        match atyScheme with
+        |(Scheme (_,aty)) ->
+          (*Pas sur si on met le newEnv ou le env*)
+          check_expression newEnv locExpr aty;
+          bind_value (Position.value locId) atyScheme env
+      )
+    |None -> 
+      let exrpAty = synth_expression env locExpr in 
+      let atyScheme = generalize_type env exrpAty in 
+      bind_value (Position.value locId) atyScheme env
+
+    )
+  | RecFunctions (list_function_def_poly_def) -> failwith "rec function"
+
+
 
 let check_definition env = function
   | DefineValue vdef ->
