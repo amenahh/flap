@@ -1,0 +1,8 @@
+{
+    "source": "19-polymorphic-mutually-recursive-functions.bad.hopix",
+    "arguments" : ["-s", "hopix", "--types", "true", "--run", "false", "--dry", "true",
+                   "--loc", "false", "--unsafe", "false", "--sexp-in", "true"],
+    "exitcode": 1,
+    "expectation": ["Expect", {}],
+    "tags": ["typing"]
+}

@@ -1,0 +1,1 @@
+let x : int = match ('x') { 0 -> 1 | (_ : char) -> 0 }

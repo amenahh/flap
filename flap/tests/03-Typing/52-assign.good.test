@@ -1,0 +1,8 @@
+{
+    "source": "52-assign.good.hopix",
+    "arguments" : ["-s", "hopix", "--types", "true", "--run", "false", "--dry", "true",
+                   "--loc", "false", "--unsafe", "false", "--sexp-in", "true"],
+    "exitcode": 0,
+    "expectation": ["Expect", {}],
+    "tags": ["typing"]
+}

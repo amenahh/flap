@@ -1,0 +1,6 @@
+Error (typechecking)
+  Type mismatch.
+Expected:
+  `b -> (`a -> `c)
+Given:
+  `a -> (`b -> `c)

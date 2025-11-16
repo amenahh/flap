@@ -1,0 +1,4 @@
+type s = C (int, unit -> s)
+
+fun : int -> s
+      fromr (n : int) = C<> (n, (\(u : unit) -> fromr (n + 1) : unit -> s))
