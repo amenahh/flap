@@ -11,7 +11,6 @@
 open HopixAST
 
 (** Internal types. *)
-(* C les types sans les positions *)
 type aty =
   | ATyVar   of type_variable
   | ATyCon   of type_constructor * aty list
@@ -30,9 +29,7 @@ val type_error : Position.t -> string -> 'a
 val string_of_aty : aty -> string
 
 val monomorphic_type_scheme : aty -> aty_scheme
-(* 
-ça instancie le schéma de type avec une liste de types qu'on connait
-*)
+
 val instantiate_type_scheme : aty_scheme -> aty list -> aty
 
 (** {3 Type construction and destruction} *)
