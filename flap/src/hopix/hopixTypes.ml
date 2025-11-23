@@ -205,6 +205,7 @@ let instantiate_type_scheme (Scheme (ts, ty)) types =
   let substitution = List.combine ts types in
   substitute substitution ty
 
+(* remplace var quantifier d'un schéma par des var fraiches pr éviter capture *)
 let refresh_type_scheme (Scheme (ts, ty)) =
   let ts' = List.map (fun _ -> fresh ()) ts in
   let phi = List.(map (fun (x, y) -> (x, ATyVar y)) (combine ts ts')) in
@@ -239,6 +240,7 @@ let free_type_variables_env_values { values; _ } =
     TypeVariableSet.empty
     values
 
+(* gén_re un schéma en quantifiant les var libre de aty qui ne sont pas libres ds l'env *)
 let generalize_type env aty =
   let open TypeVariableSet in
   let free_aty = free_type_variables aty in

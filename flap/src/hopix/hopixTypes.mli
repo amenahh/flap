@@ -28,6 +28,7 @@ val type_error : Position.t -> string -> 'a
 
 val string_of_aty : aty -> string
 
+(* var pas quantifier *)
 val monomorphic_type_scheme : aty -> aty_scheme
 
 val instantiate_type_scheme : aty_scheme -> aty list -> aty
@@ -66,6 +67,8 @@ val initial_typing_environment : unit -> typing_environment
 
 val string_of_typing_environment : typing_environment -> string
 
+(* val print_type_scheme : aty_scheme -> string *)
+(* val string_of_aty : aty -> string *)
 val bind_type_variable :
   Position.t -> typing_environment -> type_variable -> typing_environment
 
