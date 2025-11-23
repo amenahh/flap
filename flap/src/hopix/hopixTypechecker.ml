@@ -130,7 +130,16 @@ let rec synth_expression :
         let atyScheme = lookup_type_scheme_of_identifier (Position.position idLoc) (Position.value idLoc ) env  in
       instantiate_type_scheme atyScheme []
       end
-    | Tagged(cloc,typelist,exprList) -> failwith "TAGGED"
+        (*
+    | Field (locExpr,locLabel,tyLocListOption) -> 
+      let exprAty = synth_expression env locExpr in 
+      let (type_constructor, aty_list) = destruct_constructed_type pos exprAty in 
+      let aty_scheme = lookup_type_scheme_of_label pos (Position.value locLabel) env in 
+      let aty_list_from_tyLocListOption = 
+        match tyLocListOption with
+        | Some tyList -> List.map (fun ty-> internalize_ty env ty ) tyList
+        | None -> aty_list 
+*)
     | Record(labelExprList,typelist_opt) -> 
       let lab,_ = List.hd labelExprList in
       let cons,arity , labelList = lookup_type_constructor_of_label (Position.position lab) (Position.value lab) env in
@@ -144,9 +153,44 @@ let rec synth_expression :
               record_check labelExprList labelList [] env;
             ATyCon(cons,[])
         end
+    | Tagged(kLocated, tyLocListOpt, exprLocList) -> 
+        let listAty = List.map (fun exp -> synth_expression env exp) exprLocList in 
+        let aty_scheme =
+          try
+            lookup_type_scheme_of_constructor (Position.position kLocated) (Position.value kLocated) env
+          with
+          | HopixTypes.Unbound (pos_u, k ) ->
+            HopixTypes.(type_error pos_u
+                  Printf.(sprintf
+                            "Unbound %s."
+                            (string_of_binding k)))
+          in
+        let aty_list_from_tyLocListOpt =
+         ( match tyLocListOpt with
+          | Some tyList ->
+              List.map (fun ty -> internalize_ty env ty) tyList 
+          | None ->
+              []
+         )
+          in
+        let instantiated_type = instantiate_type_scheme aty_scheme aty_list_from_tyLocListOpt in
+        let (arg_types, result_type) = destruct_function_type_maximally pos instantiated_type in
+        (* if List.length arg_types <> List.length listAty then failwith "Prob de taille"
+        else 
+        List.iter2 (fun expected given -> check_equal_types pos expected given) arg_types listAty; *)
+        let rec check_args expected given = (
+          match expected , given with 
+          |[] , [] -> ()
+          | eh::et , gh::gt -> check_equal_types pos eh gh; check_args et gt
+          | eh::et , [] -> 
+            let partial_type = List.fold_right (fun t acc -> ATyArrow(t, acc)) (eh::et) result_type in
+            check_equal_types pos result_type partial_type
+        ) in check_args arg_types listAty ;   result_type
 
     | Field(expr,lab,typelist) -> failwith "FIELD"
-    | Tuple(exprList) -> failwith "OK"
+    | Tuple locExprList -> 
+      let atyList = List.map(fun locExpr -> (synth_expression env locExpr)) locExprList in
+      ATyTuple atyList
     | Sequence(exprList) -> 
       (* synth_sequence exprList env *)
       failwith "SEQUENCE"
@@ -244,14 +288,18 @@ and check_expression :
         with 
           | Unbound (pos,b) -> type_error pos (string_of_binding b)
       end
-    | Tagged(cloc,typelist,exprList) -> failwith "TAGGED"
+    | Tagged(kLocated, tyLocListOpt, exprLocList) ->
+      let givenAty = synth_expression env exp in
+      check_equal_types pos givenAty expected
     
     | Record(l,typelist) -> 
       let recType = synth_expression env exp in
       check_equal_types pos expected recType
     
     | Field(expr,lab,typelist) -> failwith "FIELD"
-    | Tuple(exprList) -> failwith "TUPLE"
+    | Tuple _ -> 
+      let given = synth_expression env exp in 
+      check_equal_types pos given expected
     | Sequence(exprList) -> 
       let _ = synth_sequence exprList env in
       ()
@@ -331,12 +379,12 @@ and check_value_definition :
           bind_value (Position.value locId) atyScheme env
       )
     |None -> 
-      let exrpAty = synth_expression env locExpr in 
-      let atyScheme = generalize_type env exrpAty in 
+      let exprAty = synth_expression env locExpr in 
+      let atyScheme = monomorphic_type_scheme exprAty in 
       bind_value (Position.value locId) atyScheme env
 
     )
-  | RecFunctions (list_function_def_poly_def) -> failwith "rec function"
+  | RecFunctions _ -> failwith "rec function"
 
 
 
