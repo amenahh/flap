@@ -122,8 +122,16 @@ let rec synth_expression :
 *)
     | Tagged(kLocated, tyLocListOpt, exprLocList) -> 
         let listAty = List.map (fun exp -> synth_expression env exp) exprLocList in 
-        let aty_scheme = lookup_type_scheme_of_constructor pos (Position.value kLocated) env in
-
+        let aty_scheme =
+          try
+            lookup_type_scheme_of_constructor (Position.position kLocated) (Position.value kLocated) env
+          with
+          | HopixTypes.Unbound (pos_u, k ) ->
+            HopixTypes.(type_error pos_u
+                  Printf.(sprintf
+                            "Unbound %s."
+                            (string_of_binding k)))
+          in
         let aty_list_from_tyLocListOpt =
          ( match tyLocListOpt with
           | Some tyList ->
@@ -134,9 +142,19 @@ let rec synth_expression :
           in
         let instantiated_type = instantiate_type_scheme aty_scheme aty_list_from_tyLocListOpt in
         let (arg_types, result_type) = destruct_function_type_maximally pos instantiated_type in
-        List.iter2 (fun expected given -> check_equal_types pos expected given) arg_types listAty;
-        result_type
-    | Record(l,typelist) -> failwith "RECORD"
+        (* if List.length arg_types <> List.length listAty then failwith "Prob de taille"
+        else 
+        List.iter2 (fun expected given -> check_equal_types pos expected given) arg_types listAty; *)
+        let rec check_args expected given = (
+          match expected , given with 
+          |[] , [] -> ()
+          | eh::et , gh::gt -> check_equal_types pos eh gh; check_args et gt
+          | eh::et , [] -> 
+            let partial_type = List.fold_right (fun t acc -> ATyArrow(t, acc)) (eh::et) result_type in
+            check_equal_types pos result_type partial_type
+        ) in check_args arg_types listAty ;   result_type
+
+    | Record _ -> failwith "rien"
     | Field(expr,lab,typelist) -> failwith "FIELD"
     | Tuple locExprList -> 
       let atyList = List.map(fun locExpr -> (synth_expression env locExpr)) locExprList in
