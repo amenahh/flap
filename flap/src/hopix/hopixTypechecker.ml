@@ -147,20 +147,30 @@ let rec synth_expression :
         let atyScheme = lookup_type_scheme_of_identifier (Position.position idLoc) (Position.value idLoc ) env  in
       instantiate_type_scheme atyScheme []
       end
+     | Field (locExpr,locLabel,tyLocListOption) -> 
+      let exprAty = synth_expression env locExpr in 
+      let (cons,args) = destruct_constructed_type (Position.position locExpr) exprAty in 
+      let cons_field = lookup_fields_of_type_constructor (Position.position locExpr) cons env in 
+      
+        let atyScheme = 
+          try lookup_type_scheme_of_label (Position.position locLabel) (Position.value locLabel) env 
+          with
+          | HopixTypes.Unbound (pos_u, k ) ->
+            HopixTypes.(type_error pos_u
+                  Printf.(sprintf
+                            "Unbound %s."
+                            (string_of_binding k)))
+        in
+        let chosedTy = 
+          match tyLocListOption with 
+          | Some tyList -> List.map (fun ty -> internalize_ty env ty ) tyList
+          | None -> args
+        in
+        let tyField = instantiate_type_scheme atyScheme chosedTy in 
+        let _, result_ty = destruct_function_type (Position.position locLabel) tyField in
+        result_ty 
+      
 
-    | Record(labelExprList,typelist_opt) -> 
-      let lab,_ = List.hd labelExprList in
-      let cons,arity , labelList = lookup_type_constructor_of_label (Position.position lab) (Position.value lab) env in
-        begin
-          match typelist_opt with
-          | Some l -> 
-            let atylist = List.map (internalize_ty env) l in
-               record_check  labelExprList labelList atylist env ;
-            ATyCon(cons,atylist)
-          | None -> 
-              record_check labelExprList labelList [] env;
-            ATyCon(cons,[])
-        end
     | Tagged(kLocated, tyLocListOpt, exprLocList) -> 
         let listAty = List.map (fun exp -> synth_expression env exp) exprLocList in 
         let aty_scheme =
@@ -197,8 +207,20 @@ let rec synth_expression :
             check_equal_types pos result_type partial_type
           | _,_ -> failwith "julesss"
         ) in check_args arg_types listAty ;   result_type
-
-    | Field(expr,lab,typelist) -> failwith "FIELD"
+         | Record(labelExprList,typelist_opt) -> 
+      let lab,_ = List.hd labelExprList in
+      let cons,arity , labelList = lookup_type_constructor_of_label (Position.position lab) (Position.value lab) env in
+        begin
+          match typelist_opt with
+          | Some l -> 
+            let atylist = List.map (internalize_ty env) l in
+               record_check  labelExprList labelList atylist env ;
+            ATyCon(cons,atylist)
+          | None -> 
+              record_check labelExprList labelList [] env;
+            ATyCon(cons,[])
+        end
+   
     | Tuple locExprList -> 
       let atyList = List.map(fun locExpr -> (synth_expression env locExpr)) locExprList in
       ATyTuple atyList
@@ -307,10 +329,12 @@ and check_expression :
       let recType = synth_expression env exp in
       check_equal_types pos expected recType
     
-    | Field(expr,lab,typelist) -> failwith "FIELD"
+    | Field(expr,lab,typelist) -> 
+      let f = synth_expression env exp in 
+      check_equal_types pos expected f
     | Tuple _ -> 
       let given = synth_expression env exp in 
-      check_equal_types pos given expected
+      check_equal_types pos expected given
     | Sequence(exprList) -> 
       let _ = synth_sequence exprList env in
       ()
