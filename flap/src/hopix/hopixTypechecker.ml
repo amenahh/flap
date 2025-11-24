@@ -110,16 +110,31 @@ let rec synth_expression :
         let atyScheme = lookup_type_scheme_of_identifier (Position.position idLoc) (Position.value idLoc ) env  in
       instantiate_type_scheme atyScheme []
       end
-        (*
+        
     | Field (locExpr,locLabel,tyLocListOption) -> 
       let exprAty = synth_expression env locExpr in 
-      let (type_constructor, aty_list) = destruct_constructed_type pos exprAty in 
-      let aty_scheme = lookup_type_scheme_of_label pos (Position.value locLabel) env in 
-      let aty_list_from_tyLocListOption = 
-        match tyLocListOption with
-        | Some tyList -> List.map (fun ty-> internalize_ty env ty ) tyList
-        | None -> aty_list 
-*)
+      let (cons,args) = destruct_constructed_type (Position.position locExpr) exprAty in 
+      let cons_field = lookup_fields_of_type_constructor (Position.position locExpr) cons env in 
+      
+        let atyScheme = 
+          try lookup_type_scheme_of_label (Position.position locLabel) (Position.value locLabel) env 
+          with
+          | HopixTypes.Unbound (pos_u, k ) ->
+            HopixTypes.(type_error pos_u
+                  Printf.(sprintf
+                            "Unbound %s."
+                            (string_of_binding k)))
+        in
+        let chosedTy = 
+          match tyLocListOption with 
+          | Some tyList -> List.map (fun ty -> internalize_ty env ty ) tyList
+          | None -> args
+        in
+        let tyField = instantiate_type_scheme atyScheme chosedTy in 
+        let _, result_ty = destruct_function_type (Position.position locLabel) tyField in
+        result_ty 
+      
+
     | Tagged(kLocated, tyLocListOpt, exprLocList) -> 
         let listAty = List.map (fun exp -> synth_expression env exp) exprLocList in 
         let aty_scheme =
@@ -154,8 +169,7 @@ let rec synth_expression :
             check_equal_types pos result_type partial_type
         ) in check_args arg_types listAty ;   result_type
 
-    | Record _ -> failwith "rien"
-    | Field(expr,lab,typelist) -> failwith "FIELD"
+    | Record(labelExprList,typelist_opt) -> failwith "RECORD"
     | Tuple locExprList -> 
       let atyList = List.map(fun locExpr -> (synth_expression env locExpr)) locExprList in
       ATyTuple atyList
@@ -220,10 +234,12 @@ and check_expression :
       let givenAty = synth_expression env exp in
       check_equal_types pos givenAty expected
     | Record(l,typelist) -> failwith "RECORD"
-    | Field(expr,lab,typelist) -> failwith "FIELD"
+    | Field(expr,lab,typelist) -> 
+      let f = synth_expression env exp in 
+      check_equal_types pos expected f
     | Tuple _ -> 
       let given = synth_expression env exp in 
-      check_equal_types pos given expected
+      check_equal_types pos expected given
     | Sequence(exprList) -> 
       let _ = synth_sequence exprList env in
       (* failwith "SEQUENCE" *)
