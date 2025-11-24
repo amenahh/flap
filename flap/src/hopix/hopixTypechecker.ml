@@ -79,7 +79,11 @@ let rec check_pattern :
       
     | PTaggedValue(c,typeList,p) -> failwith "PTaggedVal"
     | PRecord(l,tl) -> failwith "PRecord"
-    | PTuple(l) -> failwith "PTuple"
+    | PTuple(l) ->
+      let res,new_env = synth_pattern env pat in
+      check_equal_types pos expected res;
+      new_env
+       (* failwith "PTuple" *)
     | POr(l) -> failwith "POR"
     | PAnd(l) -> failwith "Pand"
 
@@ -93,20 +97,33 @@ and synth_pattern :
       let type_id = lookup_type_scheme_of_identifier (Position.position id) (Position.value id) env in
       let aty_id = instantiate_type_scheme type_id [] in
       aty_id , env;
-    | PWildcard -> failwith "WILDCARD"
+    | PWildcard -> 
+      failwith "WILDCARD"
     | PTypeAnnotation(pat,t) -> 
       let atyp = internalize_ty env t in
       let ptype,new_env = synth_pattern env pat in
       check_equal_types pos ptype atyp; 
       ptype,new_env
     | PLiteral(l) -> synth_literal (Position.value l) , env
-    
     | PTaggedValue(c,typeList,p) -> failwith "PTaggedVal"
     | PRecord(l,tl) -> failwith "PRecord"
-    | PTuple(l) -> failwith "PTuple"
+    | PTuple(l) -> 
+      let resType,new_env = synth_pTuple l env in
+      ATyTuple(resType), new_env
     | POr(l) -> failwith "POR"
     | PAnd(l) -> failwith "Pand"
 
+and synth_pTuple l env =
+  match l with
+  | [] -> failwith "impossible"
+  | [p] -> 
+    let type_pattern, new_enw = synth_pattern env p in
+    [type_pattern],new_enw
+  | p::tl -> 
+    let p_type , new_env = synth_pattern env p in
+    let liste , environement_rec = synth_pTuple tl new_env in
+    p_type::liste , environement_rec
+    
     (*     
 x avec t_barre comme type scheme se synthéthise en t' ou on remplece alpha par t_barre
 SI t_barre est un type bien formé 
@@ -130,16 +147,7 @@ let rec synth_expression :
         let atyScheme = lookup_type_scheme_of_identifier (Position.position idLoc) (Position.value idLoc ) env  in
       instantiate_type_scheme atyScheme []
       end
-        (*
-    | Field (locExpr,locLabel,tyLocListOption) -> 
-      let exprAty = synth_expression env locExpr in 
-      let (type_constructor, aty_list) = destruct_constructed_type pos exprAty in 
-      let aty_scheme = lookup_type_scheme_of_label pos (Position.value locLabel) env in 
-      let aty_list_from_tyLocListOption = 
-        match tyLocListOption with
-        | Some tyList -> List.map (fun ty-> internalize_ty env ty ) tyList
-        | None -> aty_list 
-*)
+
     | Record(labelExprList,typelist_opt) -> 
       let lab,_ = List.hd labelExprList in
       let cons,arity , labelList = lookup_type_constructor_of_label (Position.position lab) (Position.value lab) env in
@@ -178,13 +186,16 @@ let rec synth_expression :
         (* if List.length arg_types <> List.length listAty then failwith "Prob de taille"
         else 
         List.iter2 (fun expected given -> check_equal_types pos expected given) arg_types listAty; *)
-        let rec check_args expected given = (
+        let rec check_args expected given = 
+          (
           match expected , given with 
+          
           |[] , [] -> ()
           | eh::et , gh::gt -> check_equal_types pos eh gh; check_args et gt
           | eh::et , [] -> 
             let partial_type = List.fold_right (fun t acc -> ATyArrow(t, acc)) (eh::et) result_type in
             check_equal_types pos result_type partial_type
+          | _,_ -> failwith "julesss"
         ) in check_args arg_types listAty ;   result_type
 
     | Field(expr,lab,typelist) -> failwith "FIELD"
