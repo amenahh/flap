@@ -78,7 +78,8 @@ let rec check_pattern :
       env
       
     | PTaggedValue(c,typeList,p) -> failwith "PTaggedVal"
-    | PRecord(l,tl) -> failwith "PRecord"
+    | PRecord(l,tl) -> failwith " Precord"
+      
     | PTuple(l) ->
       let res,new_env = synth_pattern env pat in
       check_equal_types pos expected res;
@@ -105,13 +106,36 @@ and synth_pattern :
       check_equal_types pos ptype atyp; 
       ptype,new_env
     | PLiteral(l) -> synth_literal (Position.value l) , env
-    | PTaggedValue(c,typeList,p) -> failwith "PTaggedVal"
+    | PTaggedValue(c,typeList,p) -> 
+      failwith "PTaggedValue"
+      (* let aty_scheme =
+        try lookup_type_scheme_of_constructor (Position.position c) (Position.value c) env
+        with HopixTypes.Unbound (pos_u, k) ->
+          HopixTypes.type_error pos_u
+            (Printf.sprintf "Unbound %s." (HopixTypes.string_of_binding k))
+      in *)
+      
+      
+
     | PRecord(l,tl) -> failwith "PRecord"
     | PTuple(l) -> 
       let resType,new_env = synth_pTuple l env in
       ATyTuple(resType), new_env
     | POr(l) -> failwith "POR"
     | PAnd(l) -> failwith "Pand"
+
+(* and synth_precord l env =  *)
+
+and instantiate_with_type_list_option pos env aty_scheme arity = function
+  | Some tyList -> 
+      let atys = List.map (internalize_ty env) tyList in
+      instantiate_type_scheme aty_scheme atys
+  | None -> 
+      if arity <> 0 then
+        failwith "aritéNone"
+      else 
+        instantiate_type_scheme aty_scheme []
+
 
 and synth_pTuple l env =
   match l with
@@ -148,26 +172,24 @@ let rec synth_expression :
       instantiate_type_scheme atyScheme []
       end
      | Field (locExpr,locLabel,tyLocListOption) -> 
-      let exprAty = synth_expression env locExpr in 
-      let (cons,args) = destruct_constructed_type (Position.position locExpr) exprAty in 
-      let cons_field = lookup_fields_of_type_constructor (Position.position locExpr) cons env in 
-      
         let atyScheme = 
           try lookup_type_scheme_of_label (Position.position locLabel) (Position.value locLabel) env 
           with
           | HopixTypes.Unbound (pos_u, k ) ->
             HopixTypes.(type_error pos_u
-                  Printf.(sprintf
-                            "Unbound %s."
-                            (string_of_binding k)))
+                  Printf.(sprintf "Unbound %s." (string_of_binding k)))
         in
-        let chosedTy = 
-          match tyLocListOption with 
-          | Some tyList -> List.map (fun ty -> internalize_ty env ty ) tyList
-          | None -> args
+        let (tycon, arity, _) = 
+        try
+          lookup_type_constructor_of_label (Position.position locLabel) (Position.value locLabel) env
+        with
+        | HopixTypes.Unbound (pos_u, k) ->
+            HopixTypes.type_error pos_u
+              (Printf.sprintf "Unbound %s." (HopixTypes.string_of_binding k))
         in
-        let tyField = instantiate_type_scheme atyScheme chosedTy in 
-        let _, result_ty = destruct_function_type (Position.position locLabel) tyField in
+        let tyField = instantiate_with_type_list_option pos env atyScheme arity tyLocListOption in
+        let record_type, result_ty = destruct_function_type (Position.position locLabel) tyField in
+        (check_expression env locExpr record_type);
         result_ty 
       
 
@@ -207,7 +229,9 @@ let rec synth_expression :
             check_equal_types pos result_type partial_type
           | _,_ -> failwith "julesss"
         ) in check_args arg_types listAty ;   result_type
-         | Record(labelExprList,typelist_opt) -> 
+         
+        
+        | Record(labelExprList,typelist_opt) -> 
       let lab,_ = List.hd labelExprList in
       let cons,arity , labelList = lookup_type_constructor_of_label (Position.position lab) (Position.value lab) env in
         begin
@@ -376,7 +400,7 @@ and check_expression :
       let t = synth_expression env exp in
       check_equal_types (Position.position expr) expected t
 
-      | For(id,debutExpr,finExpr,body) ->
+    | For(id,debutExpr,finExpr,body) ->
       let tfor = synth_expression env exp in
       check_equal_types (Position.position body) expected tfor;
     | TypeAnnotation(expr,t) ->
