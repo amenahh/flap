@@ -188,7 +188,7 @@ and synth_pattern :
     | PTuple(l) -> 
       let resType,new_env = synth_pTuple l env in
       ATyTuple(resType), new_env
-    | POr(l) -> 
+      | POr(l) -> 
       begin
       match l with
       | b::tl -> 
@@ -223,6 +223,19 @@ and synth_pOr l env  type_attendu =
     check_equal_types (Position.position b) type_attendu type_pattern;
     synth_pOr tl new_env type_attendu
   | [] -> env     
+
+(* and synth_precord l env =  *)
+
+and instantiate_with_type_list_option pos env aty_scheme arity = function
+  | Some tyList -> 
+      let atys = List.map (internalize_ty env) tyList in
+      instantiate_type_scheme aty_scheme atys
+  | None -> 
+      if arity <> 0 then
+        failwith "aritéNone"
+      else 
+        instantiate_type_scheme aty_scheme []
+
 
 and synth_pTuple l env =
   match l with
@@ -259,26 +272,24 @@ let rec synth_expression :
       instantiate_type_scheme atyScheme []
       end
      | Field (locExpr,locLabel,tyLocListOption) -> 
-      let exprAty = synth_expression env locExpr in 
-      let (cons,args) = destruct_constructed_type (Position.position locExpr) exprAty in 
-      let cons_field = lookup_fields_of_type_constructor (Position.position locExpr) cons env in 
-      
         let atyScheme = 
           try lookup_type_scheme_of_label (Position.position locLabel) (Position.value locLabel) env 
           with
           | HopixTypes.Unbound (pos_u, k ) ->
             HopixTypes.(type_error pos_u
-                  Printf.(sprintf
-                            "Unbound %s."
-                            (string_of_binding k)))
+                  Printf.(sprintf "Unbound %s." (string_of_binding k)))
         in
-        let chosedTy = 
-          match tyLocListOption with 
-          | Some tyList -> List.map (fun ty -> internalize_ty env ty ) tyList
-          | None -> args
+        let (tycon, arity, _) = 
+        try
+          lookup_type_constructor_of_label (Position.position locLabel) (Position.value locLabel) env
+        with
+        | HopixTypes.Unbound (pos_u, k) ->
+            HopixTypes.type_error pos_u
+              (Printf.sprintf "Unbound %s." (HopixTypes.string_of_binding k))
         in
-        let tyField = instantiate_type_scheme atyScheme chosedTy in 
-        let _, result_ty = destruct_function_type (Position.position locLabel) tyField in
+        let tyField = instantiate_with_type_list_option pos env atyScheme arity tyLocListOption in
+        let record_type, result_ty = destruct_function_type (Position.position locLabel) tyField in
+        (check_expression env locExpr record_type);
         result_ty 
       
 
@@ -499,7 +510,7 @@ and check_expression :
       let t = synth_expression env exp in
       check_equal_types (Position.position expr) expected t
 
-      | For(id,debutExpr,finExpr,body) ->
+    | For(id,debutExpr,finExpr,body) ->
       let tfor = synth_expression env exp in
       check_equal_types (Position.position body) expected tfor;
     | TypeAnnotation(expr,t) -> 
