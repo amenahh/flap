@@ -305,15 +305,8 @@ let rec synth_expression :
                             "Unbound %s."
                             (string_of_binding k)))
           in
-        let aty_list_from_tyLocListOpt =
-         ( match tyLocListOpt with
-          | Some tyList ->
-              List.map (fun ty -> internalize_ty env ty) tyList 
-          | None ->
-              []
-         )
-          in
-        let instantiated_type = instantiate_type_scheme aty_scheme aty_list_from_tyLocListOpt in
+        let arity = match aty_scheme with Scheme(l, _) -> List.length l in
+        let instantiated_type = instantiate_with_type_list_option pos env aty_scheme arity tyLocListOpt in
         let (arg_types, result_type) = destruct_function_type_maximally pos instantiated_type in
         (* if List.length arg_types <> List.length listAty then failwith "Prob de taille"
         else 
@@ -326,7 +319,7 @@ let rec synth_expression :
           | eh::et , [] -> 
             let partial_type = List.fold_right (fun t acc -> ATyArrow(t, acc)) (eh::et) result_type in
             check_equal_types pos result_type partial_type
-          | _,_ -> failwith "julesss"
+          | [], gh -> failwith "julesss"
         ) in check_args arg_types listAty ;   result_type
     | Record(labelExprList,typelist_opt) -> 
       let lab,_ = List.hd labelExprList in
