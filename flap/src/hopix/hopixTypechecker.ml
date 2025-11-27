@@ -62,8 +62,7 @@ let rec check_pattern_linearity
         check_patternList_linearity vars l
         (* failwith "Pand" *)
       
-
-
+        
 and check_patternList_linearity identifier_list pattern_list =
   match pattern_list with
     | [] -> identifier_list
@@ -102,15 +101,13 @@ let rec check_pattern :
     let _ = check_pattern_linearity [] pat in
     match p with
     | PVariable id -> 
-      let type_id = lookup_type_scheme_of_identifier (Position.position id) (Position.value id) env in
-      let aty_id = instantiate_type_scheme type_id [] in
-      check_equal_types pos expected aty_id;
-      env
+      let var_scheme = monomorphic_type_scheme expected in
+      bind_value (Position.value id) var_scheme env
     | PWildcard -> env
     | PTypeAnnotation(pat,t) -> 
-      let res,new_env = synth_pattern env pat in
-      check_equal_types pos expected res;
-      new_env
+      let annotated_type = internalize_ty env t in
+      check_equal_types pos expected annotated_type;
+      check_pattern env pat annotated_type
       (* failwith "P TYPE ANO" *)
     | PLiteral(l) -> 
       let res = synth_literal (Position.value l) in
@@ -147,11 +144,6 @@ and synth_pattern :
   let _ = check_pattern_linearity [] pat in
   match p with
     | PVariable id -> 
-      (* let l = check_pattern_linearity env.values pat in *)
-      (* bind_type_variable (Position.position id) env id  *)
-      (* let type_id = lookup_type_scheme_of_identifier (Position.position id) (Position.value id) env in
-      let aty_id = instantiate_type_scheme type_id [] in
-      aty_id , env; *)
       failwith "ft pas fr"
     | PWildcard -> 
       (* assert(false) *)
@@ -159,31 +151,29 @@ and synth_pattern :
 
     | PTypeAnnotation(pat,t) -> 
       let atyp = internalize_ty env t in
-      let ptype,new_env = synth_pattern env pat in
-      check_equal_types pos ptype atyp; 
-      ptype,new_env
+      let new_env = check_pattern env pat atyp in
+      (atyp, new_env)
     | PLiteral(l) -> synth_literal (Position.value l) , env
-    | PTaggedValue(c,typeList,pList) ->
-      let scheme = 
-        try
-        lookup_type_scheme_of_constructor (Position.position c) (Position.value c) env
-        with
-        | HopixTypes.Unbound (pos_u, k ) ->
-            HopixTypes.(type_error pos_u
-                  Printf.(sprintf
-                            "Unbound %s."
-                            (string_of_binding k)))
+    | PTaggedValue(kLocated, tyLocListOpt,pList) ->
+
+      let aty_scheme =
+      try
+        lookup_type_scheme_of_constructor (Position.position kLocated) (Position.value kLocated) env
+      with
+      | HopixTypes.Unbound (pos_u, k) ->
+          HopixTypes.type_error pos_u
+            (Printf.sprintf "Unbound %s." (HopixTypes.string_of_binding k))
       in
-      let atyList = 
-        begin
-          match typeList with
-          | Some l -> List.map (internalize_ty env) l
-          | None -> []
-        end
+      let arity = match aty_scheme with Scheme(l, _) -> List.length l in
+      let instantiated_type = 
+        instantiate_with_type_list_option pos env aty_scheme arity tyLocListOpt 
       in
-      let a = instantiate_type_scheme scheme atyList in
-       a,synth_field pList env a 
-      (* failwith "PTaggedVal" *)
+      let (arg_types, result_type) = destruct_function_type_maximally pos instantiated_type in
+    
+      let new_env = check_pattern_list env pList arg_types in
+  
+      (result_type, new_env)
+
     | PRecord(l,tl) -> failwith "PRecord"
     | PTuple(l) -> 
       let resType,new_env = synth_pTuple l env in
@@ -206,6 +196,15 @@ and synth_pattern :
       | [] -> failwith "Pand vide"
       end
       (* failwith "Pand" *)
+
+and check_pattern_list env patterns expected_types =
+  match patterns, expected_types with
+  | [], [] -> env
+  | p::ps, t::ts ->
+      let newEnv = check_pattern env p t in
+      check_pattern_list newEnv ps ts
+  | _ ->
+      failwith "Wrong number of arguments in pattern"
 
 and synth_field l env attendu =
   match l with
@@ -308,9 +307,6 @@ let rec synth_expression :
         let arity = match aty_scheme with Scheme(l, _) -> List.length l in
         let instantiated_type = instantiate_with_type_list_option pos env aty_scheme arity tyLocListOpt in
         let (arg_types, result_type) = destruct_function_type_maximally pos instantiated_type in
-        (* if List.length arg_types <> List.length listAty then failwith "Prob de taille"
-        else 
-        List.iter2 (fun expected given -> check_equal_types pos expected given) arg_types listAty; *)
         let rec check_args expected given = 
           (
           match expected , given with 
@@ -321,6 +317,8 @@ let rec synth_expression :
             check_equal_types pos result_type partial_type
           | [], gh -> failwith "julesss"
         ) in check_args arg_types listAty ;   result_type
+
+        
     | Record(labelExprList,typelist_opt) -> 
       let lab,_ = List.hd labelExprList in
       let cons,arity , labelList = lookup_type_constructor_of_label (Position.position lab) (Position.value lab) env in
@@ -509,7 +507,8 @@ and check_expression :
     | TypeAnnotation(expr,t) -> 
       (* X *)
       let expr_aty =internalize_ty env t in
-      check_expression env expr expr_aty;
+      check_equal_types pos expected expr_aty;
+      check_expression env expr expr_aty
 
 and synth_branch env branchList texpr =
   match branchList with
@@ -518,7 +517,7 @@ and synth_branch env branchList texpr =
     let Branch(p,e) = Position.value b in
     let type_branch, new_env = synth_pattern env p in
     if type_branch = texpr then
-      synth_expression env e
+      synth_expression new_env e
       (* failwith "" *)
     else
       synth_branch env tl texpr
