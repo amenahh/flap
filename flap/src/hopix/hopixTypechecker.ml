@@ -29,8 +29,8 @@ let rec check_pattern_linearity
       | PVariable id ->
         if List.mem (Position.value id) vars then
           (* failwith "sayez chui deja la" *)
-          let res = Identifier(Position.value id) in
-          let s = "The variable " ^(string_of_binding res)^ " has already appeared in this pattern." in
+          let Id(name) = Position.value id in
+          let s = "The variable " ^name^ " has already appeared in this pattern." in
           HopixTypes.type_error position s
           (* vars *)
         else
@@ -56,13 +56,17 @@ let rec check_pattern_linearity
         check_patternList_linearity vars l
         (* failwith "PTuple" *)
       | POr(l) -> 
-        check_patternList_linearity vars l
+        check_POr_linearity [] l
+        (* check_patternList_linearity vars l *)
         (* failwith "POR" *)
       | PAnd(l) -> 
         check_patternList_linearity vars l
         (* failwith "Pand" *)
       
-
+and check_POr_linearity identifier_list pattern_list =
+  match pattern_list with
+  | [] -> identifier_list
+  | p::tl ->[] 
 
 and check_patternList_linearity identifier_list pattern_list =
   match pattern_list with
@@ -147,14 +151,8 @@ and synth_pattern :
   let _ = check_pattern_linearity [] pat in
   match p with
     | PVariable id -> 
-      (* let l = check_pattern_linearity env.values pat in *)
-      (* bind_type_variable (Position.position id) env id  *)
-      (* let type_id = lookup_type_scheme_of_identifier (Position.position id) (Position.value id) env in
-      let aty_id = instantiate_type_scheme type_id [] in
-      aty_id , env; *)
       failwith "ft pas fr"
     | PWildcard -> 
-      (* assert(false) *)
       failwith "WILDCARD"
 
     | PTypeAnnotation(pat,t) -> 
