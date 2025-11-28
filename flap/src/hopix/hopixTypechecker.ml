@@ -29,8 +29,8 @@ let rec check_pattern_linearity
       | PVariable id ->
         if List.mem (Position.value id) vars then
           (* failwith "sayez chui deja la" *)
-          let res = Identifier(Position.value id) in
-          let s = "The variable " ^(string_of_binding res)^ " has already appeared in this pattern." in
+          let Id(name) = Position.value id in
+          let s = "The variable " ^name^ " has already appeared in this pattern." in
           HopixTypes.type_error position s
           (* vars *)
         else
@@ -56,13 +56,38 @@ let rec check_pattern_linearity
         check_patternList_linearity vars l
         (* failwith "PTuple" *)
       | POr(l) -> 
-        check_patternList_linearity vars l
-        (* failwith "POR" *)
+        (* check_POr_linearity [] l *)
+        (* check_patternList_linearity vars l *)
+        failwith "POR"
       | PAnd(l) -> 
         check_patternList_linearity vars l
         (* failwith "Pand" *)
-      
+
+and check_or identifier_list ploc =
+  let p = Position.value ploc in
+  match p with
+  | PVariable(id) ->
+    if not (List.mem id identifier_list) then 
+      HopixTypes.type_error (Position.position ploc) "pas bon"
+    else
+      identifier_list
+  | PWildcard -> identifier_list   
+  | PTypeAnnotation(p,_) -> check_or identifier_list p
+  | PLiteral(_) -> identifier_list
+  | PTaggedValue(_,_,_) -> identifier_list
+  | PRecord(_,_) -> identifier_list
+  | PTuple(_) -> identifier_list
+  | POr(pattern_list) -> identifier_list
+  | PAnd(pattern_list) -> identifier_list
+
         
+and check_POr_linearity identifier_list pattern_list =
+  match pattern_list with
+  | [] -> identifier_list
+  | p::tl -> 
+    let res  = check_or identifier_list p in
+    check_POr_linearity res tl
+
 and check_patternList_linearity identifier_list pattern_list =
   match pattern_list with
     | [] -> identifier_list
@@ -106,35 +131,44 @@ let rec check_pattern :
     | PWildcard -> env
     | PTypeAnnotation(pat,t) -> 
       let annotated_type = internalize_ty env t in
-      check_equal_types pos expected annotated_type;
+      check_equal_types pos ~expected:expected ~given:annotated_type;
       check_pattern env pat annotated_type
       (* failwith "P TYPE ANO" *)
     | PLiteral(l) -> 
       let res = synth_literal (Position.value l) in
-      check_equal_types (Position.position l) expected res;
+      check_equal_types (Position.position l) ~expected:expected ~given:res;
       env
       
     | PTaggedValue(c,typeList,p) -> 
       let res,new_env = synth_pattern env pat in
-      check_equal_types pos expected res;
+      check_equal_types pos ~expected:expected ~given:res;
       new_env
       (* failwith "PTaggedVal" *)
     | PRecord(l,tl) -> failwith "PRecord"
     | PTuple(l) ->
       let res,new_env = synth_pattern env pat in
-      check_equal_types pos expected res;
+      check_equal_types pos ~expected:expected ~given:res;
       new_env
        (* failwith "PTuple" *)
     | POr(l) -> 
-      let res,new_env = synth_pattern env pat in
+      (* let res,new_env = synth_pattern env pat in
       check_equal_types pos expected res;
-      new_env
+      new_env *)
+      check_list l env expected
       (* failwith "POR" *)
     | PAnd(l) ->
-      let res,new_env = synth_pattern env pat in
+      check_list l env expected
+      (* let res,new_env = synth_pattern env pat in
       check_equal_types pos expected res;
-      new_env
+      new_env *)
       (* failwith "Pand" *)
+
+and check_list l env expected =
+  match  l with
+  | p::tl -> 
+    let new_env = check_pattern env p expected in
+    check_list tl new_env expected
+  | [] -> env
 
 and synth_pattern :
       HopixTypes.typing_environment ->
@@ -143,10 +177,9 @@ and synth_pattern :
   = fun env Position.({ value = p; position = pos; } as pat) ->
   let _ = check_pattern_linearity [] pat in
   match p with
-    | PVariable id -> 
+    | PVariable _ -> 
       failwith "ft pas fr"
     | PWildcard -> 
-      (* assert(false) *)
       failwith "WILDCARD"
 
     | PTypeAnnotation(pat,t) -> 
@@ -211,7 +244,7 @@ and synth_field l env attendu =
   | [] -> env
   | p :: tl -> 
     let ptype, new_env = synth_pattern env p in
-    check_equal_types (Position.position p) attendu ptype;
+    check_equal_types (Position.position p) ~expected:attendu ~given:ptype;
     synth_field tl new_env attendu
 
 
@@ -219,7 +252,7 @@ and synth_pOr l env  type_attendu =
   match l with
   | b::tl -> 
     let type_pattern,new_env = synth_pattern env b in
-    check_equal_types (Position.position b) type_attendu type_pattern;
+    check_equal_types (Position.position b) ~expected:type_attendu ~given:type_pattern;
     synth_pOr tl new_env type_attendu
   | [] -> env     
 
@@ -311,10 +344,10 @@ let rec synth_expression :
           (
           match expected , given with 
           |[] , [] -> ()
-          | eh::et , gh::gt -> check_equal_types pos eh gh; check_args et gt
+          | eh::et , gh::gt -> check_equal_types pos ~expected:eh ~given:gh; check_args et gt
           | eh::et , [] -> 
             let partial_type = List.fold_right (fun t acc -> ATyArrow(t, acc)) (eh::et) result_type in
-            check_equal_types pos result_type partial_type
+            check_equal_types pos ~expected:result_type ~given:partial_type
           | [], gh -> failwith "julesss"
         ) in check_args arg_types listAty ;   result_type
 
@@ -369,13 +402,13 @@ let rec synth_expression :
       failwith "if then else"
     | While(condition,expr) -> 
       let tcond = synth_expression env condition in
-      check_equal_types (Position.position condition) hbool tcond;
+      check_equal_types (Position.position condition) ~expected:hbool ~given:tcond;
       let _ = synth_expression env expr in
       hunit
     | For(id,debutExpr,finExpr,body) ->
       let tdeb = synth_expression env debutExpr in
       let tfin = synth_expression env finExpr in
-      check_equal_types (Position.position finExpr) tdeb tfin;
+      check_equal_types (Position.position finExpr) ~expected:tdeb ~given:tfin;
       let tbody = 
         synth_expression env body ;
       in
@@ -401,7 +434,7 @@ and record_check labelExprList labelList atylist env =
       let expected_type_scheme = lookup_type_scheme_of_label (Position.position label) (Position.value label) env in 
       let attendu =  instantiate_type_scheme expected_type_scheme atylist in
       let _,final = destruct_function_type (Position.position label) attendu in
-        check_equal_types (Position.position label) final tyExpr ;  
+        check_equal_types (Position.position label) ~expected:final ~given:tyExpr ;  
         record_check tl labelList atylist env
       else 
         failwith "C PAS CA"
@@ -425,13 +458,13 @@ and check_expression :
     | Literal litLoc -> 
       (* X *)
       let litType = synth_literal (Position.value litLoc) in
-      check_equal_types pos expected litType;
+      check_equal_types pos ~expected:expected ~given:litType;
     | Variable _ ->
        (* X *)
       begin
         try 
           let t = synth_expression env exp in
-          check_equal_types pos expected t
+          check_equal_types pos ~expected:expected ~given:t
         with 
           | Unbound (pos_u,k) -> 
             HopixTypes.(type_error pos_u
@@ -443,19 +476,20 @@ and check_expression :
     | Tagged(kLocated, tyLocListOpt, exprLocList) -> 
       (* X *)
       let givenAty = synth_expression env exp in
-      check_equal_types pos givenAty expected
+      (* TODO ??? c'était pas ds le bon ordre *)
+      check_equal_types pos ~expected:expected ~given:givenAty
     
     | Record(l,typelist) -> 
       let recType = synth_expression env exp in
-      check_equal_types pos expected recType
+      check_equal_types pos ~expected:expected ~given:recType
     
     | Field(expr,lab,typelist) ->
        (* X *)
       let f = synth_expression env exp in 
-      check_equal_types pos expected f
+      check_equal_types pos ~expected:expected ~given:f
     | Tuple _ -> 
       let given = synth_expression env exp in 
-      check_equal_types pos expected given
+      check_equal_types pos ~expected:expected ~given:given
     | Sequence(exprList) -> 
       (* X *)
       let _ = synth_sequence exprList env in
@@ -464,13 +498,13 @@ and check_expression :
       let newEnv = check_value_definition env v in
       check_expression newEnv expr expected
       (* failwith "DEFINE" *)
-    | Fun(f) -> failwith "FUN"
+    | Fun(_) -> failwith "FUN"
     | Apply _ -> 
       let t = synth_expression env exp in 
-      check_equal_types pos expected t;
+      check_equal_types pos ~expected:expected ~given:t;
     | Ref _ -> 
       let t = synth_expression env exp in
-      check_equal_types (Position.position exp) expected t
+      check_equal_types (Position.position exp) ~expected:expected ~given:t
       (* failwith "REF" *)
     | Assign(expr1,expr2) ->
        (* X *)
@@ -482,32 +516,32 @@ and check_expression :
        (* X *)
       let ty = synth_expression env expr in
       let t = destruct_reference_type (Position.position expr) ty in
-      check_equal_types pos expected t
+      check_equal_types pos ~expected:expected ~given:t
       (* failwith "READ" *)
     | Case(e,b) -> 
       let texpr = synth_expression env e in
       let type_branch = synth_branch env b texpr in
-      check_equal_types pos expected type_branch
+      check_equal_types pos ~expected:expected ~given:type_branch
       (* failwith "CASE" *)
     | IfThenElse(e1,e2,e3) ->
       let t1 = synth_expression env e1 in
-      check_equal_types (Position.position e1) hbool t1;
+      check_equal_types (Position.position e1) ~expected:hbool ~given:t1;
       let t2 = synth_expression env e2 in
       let t3 = synth_expression env e3 in
-      check_equal_types (Position.position e3) t2 t3
+      check_equal_types (Position.position e3) ~expected:t2 ~given:t3
       (* failwith "if then else" *)
     | While(condition,expr) -> 
       (* X *)
       let t = synth_expression env exp in
-      check_equal_types (Position.position expr) expected t
+      check_equal_types (Position.position expr) ~expected:expected ~given:t
 
     | For(id,debutExpr,finExpr,body) ->
       let tfor = synth_expression env exp in
-      check_equal_types (Position.position body) expected tfor;
+      check_equal_types (Position.position body) ~expected:expected ~given:tfor;
     | TypeAnnotation(expr,t) -> 
       (* X *)
       let expr_aty =internalize_ty env t in
-      check_equal_types pos expected expr_aty;
+      check_equal_types pos ~expected:expected ~given:expr_aty;
       check_expression env expr expr_aty
 
 and synth_branch env branchList texpr =
@@ -521,6 +555,15 @@ and synth_branch env branchList texpr =
       (* failwith "" *)
     else
       synth_branch env tl texpr
+
+(* GAMBERGE *)
+(* and synth_branch env branchList texpr =
+  match branchList with
+  | [] -> failwith "Pas exhaustif"
+  | b::tl ->  
+    let Branch(p,e) = Position.value b in
+    let new_env = check_pattern env p texpr in
+    hunit *)
 
 and check_value_definition :
       HopixTypes.typing_environment ->
