@@ -54,3 +54,18 @@
   On termine l'interprétation.
 
   On débute la discussion du [[file:cours-typage.pdf][typage]].
+* Cours 07 <2025-10-24>
+  On continue le typage.
+* Cours 08 <2025-11-07>
+  On termine le typage, donne le jalon 3.
+* Cours 09 <2025-11-14>
+  On traite la traduction [[file:cours-blocs.pdf][HopixToHobix]] jusqu'au
+  filtrage exclu.
+* Cours 10 <2025-11-21>
+  On termine la traduction de Hopix en Hobix, puis on traite celle de
+  [[file:cours-fermetures.pdf][Hobix en Fopix]].
+
+  Le jalon 4 est publié.
+* Cours 11 <2025-11-28>
+  On discute du jalon 4. On commence à présenter
+  l'[[file:cours-x86-64.pdf][architecture x86-64]].
