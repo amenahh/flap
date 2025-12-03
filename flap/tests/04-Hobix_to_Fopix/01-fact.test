@@ -1,0 +1,7 @@
+{
+    "source": "01-fact.hobix",
+    "arguments" : ["-s", "hobix", "-t", "fopix", "-r", "true"],
+    "exitcode": 0,
+    "expectation": ["Expect", {}],
+    "tags": ["block"]
+}

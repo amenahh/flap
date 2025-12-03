@@ -1,0 +1,7 @@
+{
+    "source": "07-multiple-free-variables.hobix",
+    "arguments" : ["-s", "hobix", "-t", "fopix", "-r", "true"],
+    "exitcode": 0,
+    "expectation": ["Expect", {}],
+    "tags": ["block"]
+}
