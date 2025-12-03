@@ -1,0 +1,7 @@
+{
+    "source": "12-nested-mutual-recursion.hobix",
+    "arguments" : ["-s", "hobix", "-t", "fopix", "-r", "true"],
+    "exitcode": 0,
+    "expectation": ["Expect", {}],
+    "tags": ["block"]
+}
