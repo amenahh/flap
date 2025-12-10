@@ -132,9 +132,46 @@ let free_variables =
     | S.Variable x ->
        M.singleton x
     | S.While (cond, e) ->
-       failwith "Students! This is your job!"
-    | S.Define (vd, a) ->
-       failwith "Students! This is your job!"
+      unions fvs [cond;e]
+    | S.Define (vd, body) ->
+      (* let x1 = x2 in x1 *)
+      (* 
+      let x = 2 ;;
+      let vdef (x = x )
+    in body -> x+x
+      *)
+      let fvs_body = fvs body
+      in
+      begin
+        match vd with
+        | S.SimpleValue(id,expression) -> 
+          (* x1 x2 *)
+          let fvs_expr = fvs expression in
+          let body_sans_id = M.remove id fvs_body in
+          (* let fvs_remove = M.remove id fvs_expr in si on a let x = x *)
+          M.union fvs_expr body_sans_id
+          
+        | S.RecFunctions(l) -> 
+          let lId = List.map fst l in
+          let lExpr = List.map snd l in
+
+          let rec fvs_app = function
+          |[] -> M.empty
+          |expr::t -> M.union (fvs expr) (fvs_app t)
+
+          in
+          let initial_env = fvs_app lExpr in 
+          let (new_body_env,new_expr_env) = List.fold_left (
+            fun (acc_expr,acc_body) (id, _expr) ->
+              ( 
+                let next_expr = M.remove id acc_expr in 
+                let next_body = M.remove id acc_body in 
+                (next_expr,next_body)
+              ) ) (initial_env,fvs body) l in
+          
+          M.union new_body_env new_expr_env
+      end
+       (* failwith "Students! This is your job!" *)
     | S.ReadBlock (a, b) ->
        unions fvs [a; b]
     | S.Apply (a, b) ->
@@ -144,7 +181,8 @@ let free_variables =
     | S.AllocateBlock a ->
        fvs a
     | S.Fun (xs, e) ->
-       failwith "Students! This is your job!"
+      let fvs_expr = fvs e in
+        List.fold_left (fun acc e -> M.remove e acc) fvs_expr xs
     | S.Switch (a, b, c) ->
        let c = match c with None -> [] | Some c -> [c] in
        unions fvs (a :: ExtStd.Array.present_to_list b @ c)
@@ -234,8 +272,20 @@ let translate (p : S.t) env =
       in
       ([], xc)
     | S.Define (vdef, a) ->
+      begin
+        match vdef with
+        | SimpleValue(id,expr) -> 
+          let expr_fs , e = expression env expr in
+          let new_env = {env with vars = Dict.insert id (T.Variable (identifier id)) env.vars} in
+          let afs, a = expression new_env a in
+          expr_fs@afs,T.Define(identifier id,e,a)
+        | _ ->
          failwith "Students! This is your job!"
+        end
     | S.Apply (a, bs) ->
+      (* let afs,a = expression env a in *)
+      (* let bfs , bs = expression env bs in *)
+      (* T.UnknownFunCall(a,bs) *)
          failwith "Students! This is your job!"
     | S.IfThenElse (a, b, c) ->
       let afs, a = expression env a in

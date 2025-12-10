@@ -1,0 +1,6 @@
+fun factoriel (n) =
+	if n=?0 then 1 else n* factoriel (n-1) fi
+
+val x = factoriel(5)
+
+

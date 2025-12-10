@@ -1,0 +1,10 @@
+fun curry(f) =
+ \(x) => (\(y) => f(x,y))
+
+fun f(x,y) = x+y
+
+val m = curry(f)
+
+val x = m(3)
+
+val y = x(4)

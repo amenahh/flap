@@ -1,0 +1,7 @@
+fun apply(f,x) = f(x)
+
+fun factoriel (n) =
+	if n=?0 then 1 else n* factoriel (n-1) fi
+
+
+val x = apply(factoriel,5)
