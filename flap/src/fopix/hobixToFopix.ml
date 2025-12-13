@@ -248,15 +248,16 @@ let translate (p : S.t) env =
     | S.DefineValue vd ->
        (env, value_definition env vd)
   and value_definition env = function
-    | S.SimpleValue (x, e) ->
+    | S.SimpleValue (x, e) -> 
        let fs, e = expression (reset_vars env) e in
        fs @ [T.DefineValue (identifier x, e)]
     | S.RecFunctions fdefs ->
-       let fs, defs = define_recursive_functions fdefs in
-       fs @ List.map (fun (x, e) -> T.DefineValue (x, e)) defs
+     let fs, defs = define_recursive_functions fdefs in 
+     fs @ List.map (fun (x, e) -> T.DefineValue (x, e)) defs 
+     
 
   and define_recursive_functions rdefs =
-       failwith "Students! This is your job!"
+       failwith "define recursive"
   and expression env = function
     | S.Literal l ->
       [], T.Literal (literal l)
@@ -280,13 +281,15 @@ let translate (p : S.t) env =
           let afs, a = expression new_env a in
           expr_fs@afs,T.Define(identifier id,e,a)
         | _ ->
-         failwith "Students! This is your job!"
+         failwith "define rec function"
         end
     | S.Apply (a, bs) ->
-      (* let afs,a = expression env a in *)
-      (* let bfs , bs = expression env bs in *)
-      (* T.UnknownFunCall(a,bs) *)
-         failwith "Students! This is your job!"
+      let afs,a = expression env a in
+      let bfs , exrplist = List.fold_left (fun (bf,b) e -> let (l,expr) = expression env e in (bf@l,b@[expr])) ([],[]) bs in
+      afs@bfs, T.UnknownFunCall (a,exrplist)
+
+
+  
     | S.IfThenElse (a, b, c) ->
       let afs, a = expression env a in
       let bfs, b = expression env b in
@@ -294,7 +297,38 @@ let translate (p : S.t) env =
       afs @ bfs @ cfs, T.IfThenElse (a, b, c)
 
     | S.Fun (x, e) ->
-         failwith "Students! This is your job!"
+        let free_e = free_variables (S.Fun (x,e)) in
+        let this = make_fresh_variable () in 
+
+        let (new_env,_) = 
+          List.fold_left (fun (acc_env,i) var -> 
+            let access = read_block (T.Variable this) (lint i) in
+            ({ acc_env with vars = Dict.insert var access acc_env.vars }, i + 1)
+            ) (env, 1) free_e
+        in 
+        let  expr_fs , expr = expression new_env e in
+        let taille = (List.length free_e) +1 in
+        let block_e = allocate_block ( lint taille ) in
+        let pointeur_id = make_fresh_variable () in 
+        let pointeur = T.Variable pointeur_id in
+        let id_fun = make_fresh_function_identifier () in 
+        let fun_s = T.DefineFunction(id_fun,this::List.map identifier x,expr) in
+
+        let write_e = write_block pointeur (lint 0) (T.Literal (LFun id_fun)) in
+        let list_seq = [write_e]@(List.mapi 
+        (fun i e -> 
+           let var_value = match Dict.lookup e env.vars with
+           | Some expr -> expr
+           | None -> T.Variable (identifier e)
+        in
+          write_block pointeur (lint (i+1)) var_value) 
+        ) free_e 
+        @[pointeur]  
+        in
+        let retour =T.Define ( pointeur_id, block_e,  (seqs list_seq))
+        in
+        expr_fs@[fun_s], retour
+         (* failwith "Students! This is your job!" *)
     | S.AllocateBlock a ->
       let afs, a = expression env a in
       (afs, allocate_block a)
