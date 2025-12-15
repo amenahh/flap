@@ -285,8 +285,10 @@ let translate (p : S.t) env =
         end
     | S.Apply (a, bs) ->
       let afs,a = expression env a in
-      let bfs , exrplist = List.fold_left (fun (bf,b) e -> let (l,expr) = expression env e in (bf@l,b@[expr])) ([],[]) bs in
-      afs@bfs, T.UnknownFunCall (a,exrplist)
+      let bfs , exrplist = expressions env bs in
+        (* List.fold_left (fun (bf,b) e -> let (l,expr) = expression env e in (bf@l,b@[expr])) ([],[]) bs in *)
+      let ptr = read_block a (lint 0) in 
+      afs@bfs, T.UnknownFunCall (ptr,a::exrplist)
 
 
   
@@ -299,14 +301,16 @@ let translate (p : S.t) env =
     | S.Fun (x, e) ->
         let free_e = free_variables (S.Fun (x,e)) in
         let this = make_fresh_variable () in 
-
+        
         let (new_env,_) = 
           List.fold_left (fun (acc_env,i) var -> 
             let access = read_block (T.Variable this) (lint i) in
             ({ acc_env with vars = Dict.insert var access acc_env.vars }, i + 1)
             ) (env, 1) free_e
         in 
+        
         let  expr_fs , expr = expression new_env e in
+        
         let taille = (List.length free_e) +1 in
         let block_e = allocate_block ( lint taille ) in
         let pointeur_id = make_fresh_variable () in 
