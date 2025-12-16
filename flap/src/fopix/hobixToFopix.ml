@@ -175,7 +175,10 @@ let free_variables =
     | S.ReadBlock (a, b) ->
        unions fvs [a; b]
     | S.Apply (a, b) ->
-       unions fvs (a :: b)
+       let listbinop = ["`+`";"`-`";"`*`";"`/`";"`>?`";"`>=?`";"`<?`";"`<=?`";"`=?`";"`&&`";"`||`"] in 
+       let u = unions fvs (a :: b) in 
+       List.fold_left (fun acc_union binop -> 
+        M.remove (S.Id binop) acc_union) u listbinop
     | S.WriteBlock (a, b, c) | S.IfThenElse (a, b, c) ->
        unions fvs [a; b; c]
     | S.AllocateBlock a ->
@@ -284,13 +287,23 @@ let translate (p : S.t) env =
          failwith "define rec function"
         end
     | S.Apply (a, bs) ->
-      let afs,a = expression env a in
+
+      let afs,_a = expression env a in
       let bfs , exrplist = expressions env bs in
-        (* List.fold_left (fun (bf,b) e -> let (l,expr) = expression env e in (bf@l,b@[expr])) ([],[]) bs in *)
-      let ptr = read_block a (lint 0) in 
-      afs@bfs, T.UnknownFunCall (ptr,a::exrplist)
+      
+      let ptr = read_block _a (lint 0) in 
 
+      let binops = ["`+`";"`-`";"`*`";"`/`";"`>?`";"`>=?`";"`<?`";"`<=?`";"`=?`";"`&&`";"`||`"]  in
+      (
+      
+      match a with 
+      | S.Variable (Id op) when List.mem op binops -> afs@bfs,T.FunCall(FunId(op),exrplist)
+      |_ -> 
 
+      
+      afs@bfs, T.UnknownFunCall (ptr,_a::exrplist)
+
+      )
   
     | S.IfThenElse (a, b, c) ->
       let afs, a = expression env a in
@@ -323,8 +336,8 @@ let translate (p : S.t) env =
         (fun i e -> 
            let var_value = match Dict.lookup e env.vars with
            | Some expr -> expr
-           | None -> T.Variable (identifier e)
-        in
+           | None -> T.Variable (identifier e) 
+        in 
           write_block pointeur (lint (i+1)) var_value) 
         ) free_e 
         @[pointeur]  
