@@ -175,7 +175,7 @@ let free_variables =
     | S.ReadBlock (a, b) ->
        unions fvs [a; b]
     | S.Apply (a, b) ->
-       let listbinop = ["`+`";"`-`";"`*`";"`/`";"`>?`";"`>=?`";"`<?`";"`<=?`";"`=?`";"`&&`";"`||`"] in 
+       let listbinop = ["`+`";"`-`";"`*`";"`/`";"`>?`";"`>=?`";"`<?`";"`<=?`";"`=?`";"`&&`";"`||`";"print_int"] in 
        let u = unions fvs (a :: b) in 
        List.fold_left (fun acc_union binop -> 
         M.remove (S.Id binop) acc_union) u listbinop
@@ -259,8 +259,57 @@ let translate (p : S.t) env =
      fs @ List.map (fun (x, e) -> T.DefineValue (x, e)) defs 
      
 
-  and define_recursive_functions rdefs =
-       failwith "define recursive"
+
+and define_recursive_functions rdefs =
+
+    (* let reconcat_tdef_list, res_final  *)
+
+  let list_blocks = 
+  List.fold_left (fun accListBlocks ((S.Id id), expr) -> 
+    match expr with 
+    | S.Fun(id_param, ex) -> 
+      (
+        let (expr_fs, fun_s, id_fun, fvs) = (compile_fun_body env id_param ex) in
+        let taille = (List.length fvs) + (List.length rdefs) + 1 in
+        let block_aloue = allocate_block (lint taille) in
+        let id_pointeur = make_fresh_variable() in
+        let pointeur = T.Variable id_pointeur in
+        
+        (* Écrire pointeur fonction à exécuter *)
+        let write_idFun = write_block pointeur (lint 0) (T.Literal (LFun id_fun)) in  
+        
+        (* On ajoute le nouveau bloc à l'accumulateur *)
+        accListBlocks @ [(id_pointeur,fun_s, [block_aloue; write_idFun])]
+  )
+    | _ -> failwith "N'est pas une fonction"
+  ) [] 
+    in
+     
+    failwith "rec"
+
+    (*
+    Dans un premier temps, vous allez compiler les fermetures mutuellement récursives en suivant la même stratégie que l’in-
+    terpréteur de Hopix écrit au premier semestre : une fonction récursive contient un pointeur vers elle-même et vers toutes les
+    fonctions avec lesquelles elle est mutuellement définie
+    
+    bloc de la fonction : compile fun body
+
+    créer la cloture :
+    pointeur => bloc de la fonction
+    variable libre
+
+    ETAPE 1 :
+    1. calculer free var de. OK
+    2.allouer un block taille liste id => nbr de fct qui sont mutuellement rec OK
+    3. écrire pointeur vers elle même en cloture 0
+  
+    ETAPE 2 :
+    1. 1 fonctions avec lesquelles elle est mutuellement définie
+    f g h i j k 
+    *)
+
+
+       (* failwith "define recursive" *)
   and expression env = function
     | S.Literal l ->
       [], T.Literal (literal l)
@@ -283,7 +332,9 @@ let translate (p : S.t) env =
           let new_env = {env with vars = Dict.insert id (T.Variable (identifier id)) env.vars} in
           let afs, a = expression new_env a in
           expr_fs@afs,T.Define(identifier id,e,a)
-        | _ ->
+        | RecFunctions(fdefs) ->
+          let fs, defs = define_recursive_functions fdefs in 
+          (* fs, T.DefineValue() *)
          failwith "define rec function"
         end
     | S.Apply (a, bs) ->
@@ -293,16 +344,13 @@ let translate (p : S.t) env =
       
       let ptr = read_block _a (lint 0) in 
 
-      let binops = ["`+`";"`-`";"`*`";"`/`";"`>?`";"`>=?`";"`<?`";"`<=?`";"`=?`";"`&&`";"`||`"]  in
+      let binops = ["`+`";"`-`";"`*`";"`/`";"`>?`";"`>=?`";"`<?`";"`<=?`";"`=?`";"`&&`";"`||`";"print_int"]  in
       (
       
       match a with 
       | S.Variable (Id op) when List.mem op binops -> afs@bfs,T.FunCall(FunId(op),exrplist)
       |_ -> 
-
-      
       afs@bfs, T.UnknownFunCall (ptr,_a::exrplist)
-
       )
   
     | S.IfThenElse (a, b, c) ->
@@ -312,24 +360,12 @@ let translate (p : S.t) env =
       afs @ bfs @ cfs, T.IfThenElse (a, b, c)
 
     | S.Fun (x, e) ->
-        let free_e = free_variables (S.Fun (x,e)) in
-        let this = make_fresh_variable () in 
         
-        let (new_env,_) = 
-          List.fold_left (fun (acc_env,i) var -> 
-            let access = read_block (T.Variable this) (lint i) in
-            ({ acc_env with vars = Dict.insert var access acc_env.vars }, i + 1)
-            ) (env, 1) free_e
-        in 
-        
-        let  expr_fs , expr = expression new_env e in
-        
+        let (expr_fs, fun_s, id_fun, free_e) = compile_fun_body env x e in
         let taille = (List.length free_e) +1 in
         let block_e = allocate_block ( lint taille ) in
         let pointeur_id = make_fresh_variable () in 
         let pointeur = T.Variable pointeur_id in
-        let id_fun = make_fresh_function_identifier () in 
-        let fun_s = T.DefineFunction(id_fun,this::List.map identifier x,expr) in
 
         let write_e = write_block pointeur (lint 0) (T.Literal (LFun id_fun)) in
         let list_seq = [write_e]@(List.mapi 
@@ -345,7 +381,7 @@ let translate (p : S.t) env =
         let retour =T.Define ( pointeur_id, block_e,  (seqs list_seq))
         in
         expr_fs@[fun_s], retour
-         (* failwith "Students! This is your job!" *)
+
     | S.AllocateBlock a ->
       let afs, a = expression env a in
       (afs, allocate_block a)
@@ -376,6 +412,23 @@ let translate (p : S.t) env =
       afs @ bsfs @ dfs,
       T.Switch (a, Array.of_list bs, default)
 
+  and compile_fun_body env x e =
+    let free_e = free_variables (S.Fun (x,e)) in
+    let this = make_fresh_variable () in         
+    
+    let (new_env,_) = 
+        List.fold_left (fun (acc_env,i) var -> 
+          let access = read_block (T.Variable this) (lint i) in
+          ({ acc_env with vars = Dict.insert var access acc_env.vars }, i + 1)
+          ) (env, 1) free_e
+    in     
+    
+    let  expr_fs , expr = expression new_env e in   
+    let id_fun = make_fresh_function_identifier () in 
+    let fun_s = T.DefineFunction(id_fun,this::List.map identifier x,expr) in
+    
+    (expr_fs, fun_s, id_fun, free_e)
+
 
   and expressions env = function
     | [] ->
@@ -396,3 +449,24 @@ let translate (p : S.t) env =
 
   in
   program env p
+
+
+
+
+
+  (* problème  *)
+(* 
+  let liste_expr = List.map snd rdefs in
+    let list_id = List.map fst rdefs in
+        
+    let translate_id = List.map identifier list_id in
+    
+    let translate_expr = List.map (expression env) liste_expr in
+
+    let tdef_list = List.map fst translate_expr in
+    let concat_tdef_list = List.flatten tdef_list in
+    
+    let res_list = List.map snd translate_expr in
+
+    let res_final = List.combine translate_id res_list in 
+     *)
