@@ -261,31 +261,56 @@ let translate (p : S.t) env =
 
 
 and define_recursive_functions rdefs =
+    
 
-    (* let reconcat_tdef_list, res_final  *)
+    let pre_alloc = List.map (fun (name, expr) ->
+      match expr with
+      | S.Fun (args, e) -> (name, args, e, make_fresh_variable ())
+      | _ -> failwith "Erreur pas une fonction"
+    ) rdefs in
 
-  let list_blocks = 
-  List.fold_left (fun accListBlocks ((S.Id id), expr) -> 
-    match expr with 
-    | S.Fun(id_param, ex) -> 
-      (
-        let (expr_fs, fun_s, id_fun, fvs) = (compile_fun_body env id_param ex) in
-        let taille = (List.length fvs) + (List.length rdefs) + 1 in
-        let block_aloue = allocate_block (lint taille) in
-        let id_pointeur = make_fresh_variable() in
-        let pointeur = T.Variable id_pointeur in
+
+    let rec_env = List.fold_left (fun acc_env (name, _, _, ptr) ->
+      { acc_env with vars = Dict.insert name (T.Variable ptr) acc_env.vars }
+    ) env pre_alloc in
+
+   
+    let results = List.map (fun (name, args, body, ptr) ->
         
-        (* Écrire pointeur fonction à exécuter *)
-        let write_idFun = write_block pointeur (lint 0) (T.Literal (LFun id_fun)) in  
+       
+        let (expr_fs, fun_s, id_fun, fvs) = toplevel_fun_body rec_env args body in
+
         
-        (* On ajoute le nouveau bloc à l'accumulateur *)
-        accListBlocks @ [(id_pointeur,fun_s, [block_aloue; write_idFun])]
-  )
-    | _ -> failwith "N'est pas une fonction"
-  ) [] 
-    in
-     
-    failwith "rec"
+        let taille = List.length fvs + 1 in
+        let block_e = allocate_block (lint taille) in
+
+       
+        let write_e = write_block (T.Variable ptr) (lint 0) (T.Literal (LFun id_fun)) in
+        let list_seq = write_e::List.mapi 
+        (fun i var ->
+            let valeur = match Dict.lookup var rec_env.vars with
+               | Some e -> e 
+               | None -> T.Variable (identifier var)
+            in write_block (T.Variable ptr) (lint (i + 1)) valeur
+        ) fvs in
+        
+        
+        (expr_fs @ [fun_s], (ptr, block_e), list_seq, (identifier name, T.Variable ptr))
+    ) pre_alloc in
+
+    
+    let all_fs = List.flatten (List.map (fun (fs, _, _, _) -> fs) results) in
+
+    
+    let defs_alloc = List.map (fun (_, (p, a), _, _) -> (p, a)) results in
+    let defs_names = List.map (fun (_, _, _, name_pair) -> name_pair) results in
+    let seq_list = List.flatten (List.map (fun (_, _, s, _) -> s) results) in
+    
+    
+    let var = make_fresh_variable () in
+    let local_defs = defs_alloc @ [(var, seqs seq_list)] @ defs_names in
+
+    (all_fs, local_defs)
 
     (*
     Dans un premier temps, vous allez compiler les fermetures mutuellement récursives en suivant la même stratégie que l’in-
@@ -333,10 +358,11 @@ and define_recursive_functions rdefs =
           let afs, a = expression new_env a in
           expr_fs@afs,T.Define(identifier id,e,a)
         | RecFunctions(fdefs) ->
-          let fs, defs = define_recursive_functions fdefs in 
-          (* fs, T.DefineValue() *)
-         failwith "define rec function"
+          let fs, local_defs = define_recursive_functions fdefs in 
+          let afs, _a = expression env a in
+          (fs @ afs, defines local_defs _a)
         end
+
     | S.Apply (a, bs) ->
 
       let afs,_a = expression env a in
@@ -361,7 +387,7 @@ and define_recursive_functions rdefs =
 
     | S.Fun (x, e) ->
         
-        let (expr_fs, fun_s, id_fun, free_e) = compile_fun_body env x e in
+        let (expr_fs, fun_s, id_fun, free_e) = toplevel_fun_body env x e in
         let taille = (List.length free_e) +1 in
         let block_e = allocate_block ( lint taille ) in
         let pointeur_id = make_fresh_variable () in 
@@ -412,7 +438,7 @@ and define_recursive_functions rdefs =
       afs @ bsfs @ dfs,
       T.Switch (a, Array.of_list bs, default)
 
-  and compile_fun_body env x e =
+  and toplevel_fun_body env x e =
     let free_e = free_variables (S.Fun (x,e)) in
     let this = make_fresh_variable () in         
     
