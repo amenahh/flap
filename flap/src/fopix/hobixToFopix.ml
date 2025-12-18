@@ -176,9 +176,9 @@ let free_variables =
        unions fvs [a; b]
     | S.Apply (a, b) ->
        let listbinop = ["`+`";"`-`";"`*`";"`/`";"`>?`";"`>=?`";"`<?`";"`<=?`";"`=?`";"`&&`";"`||`";"print_int"] in 
-       let u = unions fvs (a :: b) in 
-       List.fold_left (fun acc_union binop -> 
-        M.remove (S.Id binop) acc_union) u listbinop
+        let u = unions fvs (a :: b) in
+        List.fold_left (fun acc_union binop -> 
+        M.remove (S.Id binop) acc_union) u listbinop 
     | S.WriteBlock (a, b, c) | S.IfThenElse (a, b, c) ->
        unions fvs [a; b; c]
     | S.AllocateBlock a ->
@@ -273,7 +273,6 @@ and define_recursive_functions rdefs =
     let rec_env = List.fold_left (fun acc_env (name, _, _, ptr) ->
       { acc_env with vars = Dict.insert name (T.Variable ptr) acc_env.vars }
     ) env pre_alloc in
-
    
     let results = List.map (fun (name, args, body, ptr) ->
         
@@ -305,33 +304,11 @@ and define_recursive_functions rdefs =
     let defs_alloc = List.map (fun (_, (p, a), _, _) -> (p, a)) results in
     let defs_names = List.map (fun (_, _, _, name_pair) -> name_pair) results in
     let seq_list = List.flatten (List.map (fun (_, _, s, _) -> s) results) in
-    
-    
+
     let var = make_fresh_variable () in
     let local_defs = defs_alloc @ [(var, seqs seq_list)] @ defs_names in
 
     (all_fs, local_defs)
-
-    (*
-    Dans un premier temps, vous allez compiler les fermetures mutuellement récursives en suivant la même stratégie que l’in-
-    terpréteur de Hopix écrit au premier semestre : une fonction récursive contient un pointeur vers elle-même et vers toutes les
-    fonctions avec lesquelles elle est mutuellement définie
-    
-    bloc de la fonction : compile fun body
-
-    créer la cloture :
-    pointeur => bloc de la fonction
-    variable libre
-
-    ETAPE 1 :
-    1. calculer free var de. OK
-    2.allouer un block taille liste id => nbr de fct qui sont mutuellement rec OK
-    3. écrire pointeur vers elle même en cloture 0
-  
-    ETAPE 2 :
-    1. 1 fonctions avec lesquelles elle est mutuellement définie
-    f g h i j k 
-    *)
 
 
        (* failwith "define recursive" *)
@@ -343,12 +320,33 @@ and define_recursive_functions rdefs =
        let efs, e = expression env e in
        cfs @ efs, T.While (cond, e)
     | S.Variable x ->
-      let xc =
-        match Dict.lookup x env.vars with
-          | None -> T.Variable (identifier x)
-          | Some e -> e
-      in
-      ([], xc)
+      (
+      let binops = ["`+`";"`-`";"`*`";"`/`";"`>?`";"`>=?`";"`<?`";"`<=?`";"`=?`";"`&&`";"`||`";"print_int"]  in
+      
+      
+      match x with 
+      |(Id op) when List.mem op binops -> 
+        let block_e = allocate_block ( lint 1) in
+        let pointeur_id = make_fresh_variable () in 
+        let pointeur = T.Variable pointeur_id in
+       
+        let write_e = write_block pointeur (lint 0) (T.Literal (LFun (function_identifier x))) in
+
+        
+
+        let seq = [block_e;write_e;pointeur] in
+        [T.DefineFunction (function_identifier x, [], FunCall (function_identifier x,[]))],T.Define ( pointeur_id, block_e,seqs seq)
+      |_ -> 
+       
+        let xc =
+          match Dict.lookup x env.vars with
+            | None -> T.Variable (identifier x)
+            | Some e -> e
+        in
+        ([], xc)
+      )
+      
+
     | S.Define (vdef, a) ->
       begin
         match vdef with
@@ -365,17 +363,18 @@ and define_recursive_functions rdefs =
 
     | S.Apply (a, bs) ->
 
-      let afs,_a = expression env a in
+      
       let bfs , exrplist = expressions env bs in
       
-      let ptr = read_block _a (lint 0) in 
 
       let binops = ["`+`";"`-`";"`*`";"`/`";"`>?`";"`>=?`";"`<?`";"`<=?`";"`=?`";"`&&`";"`||`";"print_int"]  in
       (
       
       match a with 
-      | S.Variable (Id op) when List.mem op binops -> afs@bfs,T.FunCall(FunId(op),exrplist)
+      | S.Variable (Id op) when List.mem op binops -> bfs,T.FunCall(FunId(op),exrplist)
       |_ -> 
+      let afs,_a = expression env a in
+      let ptr = read_block _a (lint 0) in 
       afs@bfs, T.UnknownFunCall (ptr,_a::exrplist)
       )
   
