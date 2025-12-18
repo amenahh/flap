@@ -134,12 +134,7 @@ let free_variables =
     | S.While (cond, e) ->
       unions fvs [cond;e]
     | S.Define (vd, body) ->
-      (* let x1 = x2 in x1 *)
-      (* 
-      let x = 2 ;;
-      let vdef (x = x )
-    in body -> x+x
-      *)
+      
       let fvs_body = fvs body
       in
       begin
@@ -237,12 +232,39 @@ let arity_of_external id env =
     | Some n -> n
     | None -> assert false (* By is_external. *)
 
+let nb_args prim = 
+  let binops = ["`+`";"`-`";"`*`";"`/`";"`>?`";"`>=?`";"`<?`";"`<=?`";"`=?`";"`&&`";"`||`"] in 
+  match prim with
+  | op when List.mem op binops -> 2
+  |_ -> 1
+  
+let primitives prim =
+    
+    let this = make_fresh_variable () in             
+    let id_fun = make_fresh_function_identifier () in 
+  
+    let liste_args = 
+      if (nb_args prim) > 1 then
+        [make_fresh_variable();make_fresh_variable()]
+      else
+        [make_fresh_variable()]
+    in
+
+    let toVar = List.map(fun x -> T.Variable x ) liste_args in
+    let fun_s = T.DefineFunction(id_fun,this::liste_args,FunCall(T.FunId prim,toVar)) in
+    
+    fun_s,id_fun
+        
+
 
 (** [translate p env] turns an Hobix program [p] into a Fopix program
     using [env] to retrieve contextual information. *)
 let translate (p : S.t) env =
   let rec program env defs =
-    let env, defs = ExtStd.List.foldmap definition env defs in
+  (* let binops = ["`+`";"`-`";"`*`";"`/`";"`>?`";"`>=?`";"`<?`";"`<=?`";"`=?`";"`&&`";"`||`";"print_int"]
+  in 
+  let deflist = List.map (fun b -> primitives b ) binops in  *)
+  let env, defs = ExtStd.List.foldmap definition env defs in
     (List.flatten defs, env)
   and definition env = function
     | S.DeclareExtern (id, n) ->
@@ -323,19 +345,22 @@ and define_recursive_functions rdefs =
       (
       let binops = ["`+`";"`-`";"`*`";"`/`";"`>?`";"`>=?`";"`<?`";"`<=?`";"`=?`";"`&&`";"`||`";"print_int"]  in
       
+    
       
       match x with 
       |(Id op) when List.mem op binops -> 
+
+        let tdef,id_fun = primitives op in
+
+
         let block_e = allocate_block ( lint 1) in
         let pointeur_id = make_fresh_variable () in 
         let pointeur = T.Variable pointeur_id in
        
-        let write_e = write_block pointeur (lint 0) (T.Literal (LFun (function_identifier x))) in
-
-        
+        let write_e = write_block pointeur (lint 0) (T.Literal (LFun id_fun)) in
 
         let seq = [block_e;write_e;pointeur] in
-        [T.DefineFunction (function_identifier x, [], FunCall (function_identifier x,[]))],T.Define ( pointeur_id, block_e,seqs seq)
+        [tdef],T.Define ( pointeur_id, block_e,seqs seq)
       |_ -> 
        
         let xc =
@@ -366,7 +391,7 @@ and define_recursive_functions rdefs =
       
       let bfs , exrplist = expressions env bs in
       
-
+      
       let binops = ["`+`";"`-`";"`*`";"`/`";"`>?`";"`>=?`";"`<?`";"`<=?`";"`=?`";"`&&`";"`||`";"print_int"]  in
       (
       
@@ -451,9 +476,7 @@ and define_recursive_functions rdefs =
     let  expr_fs , expr = expression new_env e in   
     let id_fun = make_fresh_function_identifier () in 
     let fun_s = T.DefineFunction(id_fun,this::List.map identifier x,expr) in
-    
     (expr_fs, fun_s, id_fun, free_e)
-
 
   and expressions env = function
     | [] ->
@@ -474,24 +497,3 @@ and define_recursive_functions rdefs =
 
   in
   program env p
-
-
-
-
-
-  (* problème  *)
-(* 
-  let liste_expr = List.map snd rdefs in
-    let list_id = List.map fst rdefs in
-        
-    let translate_id = List.map identifier list_id in
-    
-    let translate_expr = List.map (expression env) liste_expr in
-
-    let tdef_list = List.map fst translate_expr in
-    let concat_tdef_list = List.flatten tdef_list in
-    
-    let res_list = List.map snd translate_expr in
-
-    let res_final = List.combine translate_id res_list in 
-     *)

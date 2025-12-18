@@ -1,0 +1,20 @@
+def _1 (_2, f, x) =
+  call (read_block (f, 0)) with (f, x)
+val _1 =
+  allocate_block (1)
+val _3 =
+  write_block (_1, 0, &_1)
+val apply =
+  _1
+def _2 (_4, x) =
+  print_int (x)
+val main =
+  call
+  (read_block (apply, 0))
+  with
+  (
+    apply,
+    val _5 = allocate_block (1) ;
+    val _6 = write_block (_5, 0, &_2) ; _5,
+    42
+  )

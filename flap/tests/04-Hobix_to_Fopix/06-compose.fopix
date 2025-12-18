@@ -1,0 +1,107 @@
+def _1 (_3, x) =
+  call
+  (read_block (read_block (_3, 1), 0))
+  with
+  (
+    read_block (_3, 1),
+    call
+    (read_block (read_block (_3, 2), 0))
+    with
+    (read_block (_3, 2), x)
+  )
+def _2 (_2, f, g) =
+  val _4 = allocate_block (3) ;
+  val _7 = write_block (_4, 0, &_1) ;
+  val _6 = write_block (_4, 1, f) ;
+  val _5 = write_block (_4, 2, g) ; _4
+val _1 =
+  allocate_block (1)
+val _8 =
+  write_block (_1, 0, &_2)
+val compose =
+  _1
+def _3 (_10, x) =
+  x
+val _9 =
+  allocate_block (1)
+val _11 =
+  write_block (_9, 0, &_3)
+val id =
+  _9
+def _4 (_13, x) =
+  (2 * x)
+val _12 =
+  allocate_block (1)
+val _14 =
+  write_block (_12, 0, &_4)
+val twice =
+  _12
+val main =
+  val __nothing__ =
+    print_int
+    (call (read_block (twice, 0)) with (twice, 21))
+    ;
+  val __nothing__ =
+    print_int
+    (
+      call
+      (read_block
+      (
+        call
+        (read_block (compose, 0))
+        with
+        (compose, id, twice),
+        0
+      ))
+      with
+      (
+        call
+        (read_block (compose, 0))
+        with
+        (compose, id, twice),
+        21
+      )
+    )
+    ;
+  val __nothing__ =
+    print_int
+    (
+      call
+      (read_block
+      (
+        call
+        (read_block (compose, 0))
+        with
+        (compose, twice, id),
+        0
+      ))
+      with
+      (
+        call
+        (read_block (compose, 0))
+        with
+        (compose, twice, id),
+        21
+      )
+    )
+    ;
+  print_int
+  (
+    call
+    (read_block
+    (
+      call
+      (read_block (compose, 0))
+      with
+      (compose, twice, twice),
+      0
+    ))
+    with
+    (
+      call
+      (read_block (compose, 0))
+      with
+      (compose, twice, twice),
+      10
+    )
+  )

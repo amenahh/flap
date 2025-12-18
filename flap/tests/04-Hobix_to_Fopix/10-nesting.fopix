@@ -1,0 +1,35 @@
+def _1 (_4, t) =
+  (((read_block (_4, 1) + read_block (_4, 2))
+  +
+  read_block (_4, 3))
+  +
+  t)
+def _2 (_3, z) =
+  val i =
+    val _5 = allocate_block (4) ;
+    val _9 = write_block (_5, 0, &_1) ;
+    val _8 = write_block (_5, 1, read_block (_3, 1)) ;
+    val _7 = write_block (_5, 2, read_block (_3, 2)) ;
+    val _6 = write_block (_5, 3, z) ; _5
+    ;
+  call (read_block (i, 0)) with (i, (z + 1))
+def _3 (_2, y) =
+  val h =
+    val _10 = allocate_block (3) ;
+    val _13 = write_block (_10, 0, &_2) ;
+    val _12 = write_block (_10, 1, read_block (_2, 1)) ;
+    val _11 = write_block (_10, 2, y) ; _10
+    ;
+  call (read_block (h, 0)) with (h, (y + 1))
+def _4 (_1, x) =
+  val g =
+    val _14 = allocate_block (2) ;
+    val _16 = write_block (_14, 0, &_3) ;
+    val _15 = write_block (_14, 1, x) ; _14
+    ;
+  call (read_block (g, 0)) with (g, (x + 1))
+val f =
+  val _17 = allocate_block (1) ;
+  val _18 = write_block (_17, 0, &_4) ; _17
+val main =
+  print_int (call (read_block (f, 0)) with (f, 3))

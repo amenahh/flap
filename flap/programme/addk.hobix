@@ -1,5 +1,4 @@
-fun addk(k) = \(x) => x+k
 
-val m = addk(3)
-val y = m(5)
-val e = addk(3) (4)
+
+val addk = \(x) => x+1
+val c = addk(1)

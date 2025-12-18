@@ -1,0 +1,33 @@
+def _1 (_3, x) =
+  if (x =? 0) then
+    1
+  else
+    call
+    (read_block (read_block (_3, 1), 0))
+    with
+    (read_block (_3, 1), (x - 1))
+  end
+def _2 (_4, x) =
+  if (x =? 0) then
+    0
+  else
+    call
+    (read_block (read_block (_4, 1), 0))
+    with
+    (read_block (_4, 1), (x - 1))
+  end
+val _1 =
+  allocate_block (2)
+val _2 =
+  allocate_block (2)
+val _5 =
+  val _8 = write_block (_1, 0, &_1) ;
+  val _7 = write_block (_1, 1, _2) ;
+  val _6 = write_block (_2, 0, &_2) ;
+  write_block (_2, 1, _1)
+val f =
+  _1
+val g =
+  _2
+val main =
+  print_int (call (read_block (f, 0)) with (f, 20))

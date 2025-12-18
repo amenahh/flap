@@ -1,0 +1,7 @@
+def _1 (_1, x) =
+  (x + 1)
+val addk =
+  val _2 = allocate_block (1) ;
+  val _3 = write_block (_2, 0, &_1) ; _2
+val c =
+  call (read_block (addk, 0)) with (addk, 1)
