@@ -1,0 +1,12 @@
+globals(S)
+    %rdi <- copy 1 ;
+    %rsi <- copy 2 ;
+    %rdx <- copy 3 ;
+    %rcx <- copy 4 ;
+    %r8 <- copy 5 ;
+    %r9 <- copy 6 ;
+    add_eight_int(1000,800) ;
+    S <- copy %rax ;
+    %rdi <- copy S ;
+    observe_int() ;
+end

@@ -448,7 +448,7 @@ module Codegen(IS : InstructionSelector)(FM : FrameManager) =
       | S.DExternalFunction (S.FId id) ->
          T.(Directive (Extern id)) :: body,
          env
-
+    (* *** *)
     let generate_main _ p =
       let open T in
 
@@ -483,7 +483,7 @@ module Codegen(IS : InstructionSelector)(FM : FrameManager) =
           ]
         @ body
       in
-
+      (* *** *)
       Directive (Global "main") :: List.rev body
 
     (** [translate p env] turns a Retrolix program into a X86-64 program. *)
@@ -500,9 +500,8 @@ module Codegen(IS : InstructionSelector)(FM : FrameManager) =
 module InstructionSelector : InstructionSelector =
   struct
     open T
-
-    let mov ~(dst : dst) ~(src : src) =
-      failwith "Students! This is your job!"
+    (* val mov : dst:T.dst -> src:T.src -> T.line list *)
+    let mov ~(dst : dst) ~(src : src) = [Instruction (movq src dst)]
 
     let bin ins ~dst ~srcl ~srcr =
       failwith "Students! This is your job!"
@@ -510,11 +509,29 @@ module InstructionSelector : InstructionSelector =
     let add ~dst ~srcl ~srcr =
       failwith "Students! This is your job!"
 
-    let sub ~dst ~srcl ~srcr =
-      failwith "Students! This is your job!"
+     (** [sub ~dst ~srcl ~srcr] generates the x86-64 assembly listing to store
+        [srcl - srcr] into [dst].
+         val sub : dst:T.dst -> srcl:T.src -> srcr:T.src -> T.line list
+        *)
+    let sub ~dst ~srcl ~srcr = (* TODO r15 *)
+      let r15 = `Reg X86_64_Architecture.R15 in
+      let mov_r15 = movq srcl r15 in
+      let sub_ins = subq srcr r15 in
+      let mov_dst = movq r15 dst in
+      insns [mov_r15;sub_ins;mov_dst]
+      (* failwith "Students! This is your job!" *)
 
-    let mul ~dst ~srcl ~srcr =
-      failwith "Students! This is your job!"
+    (** [mul ~dst ~srcl ~srcr] generates the x86-64 assembly listing to store
+        [srcl * srcr] into [dst]. *)
+    (* val mul : dst:T.dst -> srcl:T.src -> srcr:T.src -> T.line list *)
+   
+    let mul ~dst ~srcl ~srcr = (* TODO *)
+       let r15 = `Reg X86_64_Architecture.R15 in
+      let mov_r15 = movq srcl r15 in
+      let imul_ins = imulq srcr r15 in
+      let mov_dst = movq r15 dst in
+      insns [mov_r15;imul_ins;mov_dst]
+      (* failwith "Students! This is your job!" *)
 
     let div ~dst ~srcl ~srcr =
       failwith "Students! This is your job!"
@@ -562,8 +579,23 @@ module FrameManager(IS : InstructionSelector) : FrameManager =
       (* Student! Implement me! *)
       { param_count = 0; locals_space = 0; stack_map = S.IdMap.empty; }
 
+    (* Implémentez la fonction location_of du module FrameManager, en supposant que la variable
+    passée en argument est toujours une variable globale (l’argument de type frame_descriptor
+    n’est donc pas utilisé pour l’instant). *)
+    
+    (** [location_of fd v] computes the address of [v] according to the frame
+        descriptor [fd]. Note that [v] might be a local variable, a function
+        parameter, or a global variable. *)
+    
+    (* val location_of : frame_descriptor -> S.identifier -> T.address *)
     let location_of fd id =
-      failwith "Students! This is your job!"
+      let S.Id (s) = id in
+      let label = T.Lab(s) in
+      let rip = X86_64_Architecture.RIP in
+      let off = label in
+      let base = rip in
+      let res = T.addr ~offset:off ~base:base () in
+      res
 
     let function_prologue fd =
       (* Student! Implement me! *)
@@ -573,9 +605,26 @@ module FrameManager(IS : InstructionSelector) : FrameManager =
       (* Student! Implement me! *)
       []
 
-    let call fd ~kind ~f ~args =
-      failwith "Students! This is your job!"
+    (** [call fd ~kind ~f ~args] generates the x86-64 assembly listing to setup
+    a call to the function at [f], with arguments [args], with [kind]
+  specifying whether this should be a normal or tail call.  *)
+    
+        (* val call :
+      frame_descriptor ->
+      kind:[ `Normal | `Tail ] ->
+      f:T.src ->
+      args:T.src list ->
+      T.line list
+  end *)
 
+    let call fd ~kind ~f ~args =
+      let t = List.length args in
+      let all_register_args = X86_64_Architecture.argument_passing_registers in
+      if t < 7 then
+
+        failwith ""
+      else
+        failwith ""
   end
 
 module CG =
