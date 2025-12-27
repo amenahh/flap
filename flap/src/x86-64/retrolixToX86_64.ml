@@ -576,9 +576,20 @@ module FrameManager(IS : InstructionSelector) : FrameManager =
       + fd.locals_space
 
     let frame_descriptor ~params ~locals =
-      (* Student! Implement me! *)
-      { param_count = 0; locals_space = 0; stack_map = S.IdMap.empty; }
 
+      let param_count = List.length params in 
+      let locals_space = (List.length locals)*8 in 
+      let stack_map = S.IdMap.empty in 
+   
+      let (stack,_) = 
+      List.fold_left (fun (pile,cpt) id -> 
+        (
+        S.IdMap.add id (Mint.of_int (-cpt)) pile
+        ,cpt+8
+        )
+        ) (stack_map,8) locals 
+
+      in {param_count=param_count;locals_space=locals_space;stack_map=stack;}
     (* Implémentez la fonction location_of du module FrameManager, en supposant que la variable
     passée en argument est toujours une variable globale (l’argument de type frame_descriptor
     n’est donc pas utilisé pour l’instant). *)
@@ -598,12 +609,10 @@ module FrameManager(IS : InstructionSelector) : FrameManager =
       res
 
     let function_prologue fd =
-      (* Student! Implement me! *)
-      []
+      T.insns [T.pushq ~src:rbp;T.movq ~src:rsp ~dst:rbp; T.subq ~src:(T.lit (Mint.of_int fd.locals_space) ) ~dst:rsp ]
 
     let function_epilogue fd =
-      (* Student! Implement me! *)
-      []
+      T.insns [T.addq ~src:(T.lit (Mint.of_int fd.locals_space) ) ~dst:rsp ;T.popq ~dst:rbp; T.Ret ]
 
     (** [call fd ~kind ~f ~args] generates the x86-64 assembly listing to setup
     a call to the function at [f], with arguments [args], with [kind]
