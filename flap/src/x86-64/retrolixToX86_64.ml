@@ -588,8 +588,16 @@ module FrameManager(IS : InstructionSelector) : FrameManager =
         ,cpt+8
         )
         ) (stack_map,8) locals 
+      in 
+      let (final_stack,_) =
+      List.fold_left (fun (pile,cpt) id -> 
+        (
+        S.IdMap.add id (Mint.of_int (cpt)) pile
+        ,cpt+8
+        )
+        ) (stack,16) params
 
-      in {param_count=param_count;locals_space=locals_space;stack_map=stack;}
+      in {param_count=param_count;locals_space=locals_space;stack_map=final_stack;}
     (* Implémentez la fonction location_of du module FrameManager, en supposant que la variable
     passée en argument est toujours une variable globale (l’argument de type frame_descriptor
     n’est donc pas utilisé pour l’instant). *)
@@ -600,11 +608,11 @@ module FrameManager(IS : InstructionSelector) : FrameManager =
     
     (* val location_of : frame_descriptor -> S.identifier -> T.address *)
     let location_of fd id =
-      let S.Id (s) = id in
-      let label = T.Lab(s) in
-      let rip = X86_64_Architecture.RIP in
-      let off = label in
-      let base = rip in
+      let base,off = 
+      match S.IdMap.find_opt id fd.stack_map with 
+      |Some x ->   X86_64_Architecture.RBP,T.Lit x
+      |None -> let S.Id (s) = id in X86_64_Architecture.RIP,T.Lab(s)
+      in 
       let res = T.addr ~offset:off ~base:base () in
       res
 
