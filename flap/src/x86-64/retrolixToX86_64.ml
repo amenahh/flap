@@ -504,10 +504,18 @@ module InstructionSelector : InstructionSelector =
     let mov ~(dst : dst) ~(src : src) = [Instruction (movq src dst)]
 
     let bin ins ~dst ~srcl ~srcr =
-      failwith "Students! This is your job!"
+      let r15 = `Reg X86_64_Architecture.R15 in
+      let mov_r15 = movq srcl r15 in
+      let _ins = ins srcr r15 in
+      let mov_dst = movq r15 dst in
+      insns [mov_r15;_ins;mov_dst]
 
     let add ~dst ~srcl ~srcr =
-      failwith "Students! This is your job!"
+      let r15 = `Reg X86_64_Architecture.R15 in
+      let mov_r15 = movq srcl r15 in
+      let add_ins = addq srcr r15 in
+      let mov_dst = movq r15 dst in
+      insns [mov_r15;add_ins;mov_dst]
 
      (** [sub ~dst ~srcl ~srcr] generates the x86-64 assembly listing to store
         [srcl - srcr] into [dst].
@@ -526,7 +534,7 @@ module InstructionSelector : InstructionSelector =
     (* val mul : dst:T.dst -> srcl:T.src -> srcr:T.src -> T.line list *)
    
     let mul ~dst ~srcl ~srcr = (* TODO *)
-       let r15 = `Reg X86_64_Architecture.R15 in
+      let r15 = `Reg X86_64_Architecture.R15 in
       let mov_r15 = movq srcl r15 in
       let imul_ins = imulq srcr r15 in
       let mov_dst = movq r15 dst in
@@ -534,7 +542,14 @@ module InstructionSelector : InstructionSelector =
       (* failwith "Students! This is your job!" *)
 
     let div ~dst ~srcl ~srcr =
-      failwith "Students! This is your job!"
+      let r15 = `Reg X86_64_Architecture.R15 in
+      let rax = `Reg X86_64_Architecture.RAX in
+      let mov_rax = movq srcl rax in
+      let extend = cqto in 
+      let mov_r15 = movq srcr r15 in 
+      let idiv_ins = idivq r15 in
+      let mov_dst = movq rax dst in
+      insns [mov_rax;extend;mov_r15;idiv_ins;mov_dst]
 
     let andl ~dst ~srcl ~srcr =
       failwith "Students! This is your job!"
@@ -620,7 +635,7 @@ module FrameManager(IS : InstructionSelector) : FrameManager =
       T.insns [T.pushq ~src:rbp;T.movq ~src:rsp ~dst:rbp; T.subq ~src:(T.lit (Mint.of_int fd.locals_space) ) ~dst:rsp ]
 
     let function_epilogue fd =
-      T.insns [T.addq ~src:(T.lit (Mint.of_int fd.locals_space) ) ~dst:rsp ;T.popq ~dst:rbp; T.Ret ]
+      T.insns [T.addq ~src:(T.lit (Mint.of_int fd.locals_space) ) ~dst:rsp ;T.popq ~dst:rbp ]
 
     (** [call fd ~kind ~f ~args] generates the x86-64 assembly listing to setup
     a call to the function at [f], with arguments [args], with [kind]
@@ -636,7 +651,7 @@ module FrameManager(IS : InstructionSelector) : FrameManager =
 
     let call fd ~kind ~f ~args =
       (* let reg_inst = *)
-      let push_list = List.map ( fun src -> T.pushq ~src:src)  args in
+      let push_list = List.map ( fun src -> T.pushq ~src:src)  (List.rev args) in
       let push_inst = T.insns push_list in
       let call_inst = [T.Instruction(T.calldi f)] in 
         push_inst@call_inst
