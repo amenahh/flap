@@ -9,4 +9,5 @@ globals(S)
     S <- copy %rax ;
     %rdi <- copy S ;
     observe_int() ;
+    exit;
 end

@@ -618,13 +618,11 @@ module FrameManager(IS : InstructionSelector) : FrameManager =
   end *)
 
     let call fd ~kind ~f ~args =
-      let t = List.length args in
-      let all_register_args = X86_64_Architecture.argument_passing_registers in
-      if t < 7 then
-
-        failwith ""
-      else
-        failwith ""
+      (* let reg_inst = *)
+      let push_list = List.map ( fun src -> T.pushq ~src:src)  args in
+      let push_inst = T.insns push_list in
+      let call_inst = [T.Instruction(T.calldi f)] in 
+        push_inst@call_inst
   end
 
 module CG =
