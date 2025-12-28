@@ -611,12 +611,33 @@ module InstructionSelector : InstructionSelector =
       unit ->
       T.line list *)
 
-    let switch ?default ~discriminant ~cases () =
-      let cases_instruction_array = Array.map (fun  l -> (T.Instruction (jmpl l ) )) cases in 
-      let cases_instructions = Array.to_list cases_instruction_array in 
-      
+let switch ?default ~discriminant ~cases () = 
+    let r15 = `Reg X86_64_Architecture.R15 in
+    let mov_r15 = [Instruction (movq discriminant r15)] in 
+    let size_array = Array.length cases in 
 
+      let cases_instructions_array = 
+        Array.mapi (fun  i case_label ->
+          [
+            Instruction (cmpq ~src1:(`Imm (Lit(Mint.of_int i))) ~src2:r15);
+            Instruction (jccl ~cc:E ~tgt:case_label)
+          ]
+        ) cases in 
+        let cases_instructions_list = Array.to_list cases_instructions_array in
+        let cases_instructions = List.flatten cases_instructions_list
+      in
       
+      let default_instruction = 
+        match default with
+        | Some l -> 
+          [ 
+            Instruction (cmpq ~src1:(`Imm (Lit (Mint.of_int size_array))) ~src2:r15);
+            Instruction (jccl ~cc:AE ~tgt:l)
+            ]
+        | None -> [] 
+      in
+
+     mov_r15 @ default_instruction @ cases_instructions 
 
   end
 
@@ -716,7 +737,6 @@ module FrameManager(IS : InstructionSelector) : FrameManager =
       let current_locals_size = fd.locals_space in
       let args_size = (List.length push_list) * 8 in 
       let total_space_size = saved_regs_size + current_locals_size + args_size + 8   in 
-
       
         
       match kind with 
