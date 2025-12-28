@@ -580,10 +580,12 @@ module InstructionSelector : InstructionSelector =
 
 
     let conditional_jump ~cc ~srcl ~srcr ~ll ~lr =
-      let compare_ins = cmpq srcr srcl in
+      let r15 = `Reg X86_64_Architecture.R15 in
+      let mov_r15 = movq srcl r15 in 
+      let compare_ins = cmpq srcr r15 in
       let jump_cc = jccl ~cc:cc ~tgt:ll in
       let jump_l = jmpl lr in
-    insns [compare_ins;jump_cc;jump_l]
+    insns [mov_r15;compare_ins;jump_cc;jump_l]
       (* failwith "Students! This is your job!" *)
 
         (** [switch ~default ~discriminant ~cases ()] generates the x86-64 assembly
@@ -602,6 +604,8 @@ module InstructionSelector : InstructionSelector =
 
     let switch ?default ~discriminant ~cases () =
       (* let i = liti discriminant in *)
+
+      
       failwith "switch"
 
   end
