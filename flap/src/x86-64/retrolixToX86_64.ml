@@ -432,7 +432,7 @@ module Codegen(IS : InstructionSelector)(FM : FrameManager) =
              block
              env
          in
-         def @ body@ T.insns [T.Ret], env
+         def @ body, env
         (* Modif ici *)
       | S.DFunction ((S.FId id) as f, params, block) ->
          let def, env =
@@ -502,10 +502,15 @@ module InstructionSelector : InstructionSelector =
     open T
    
     let mov ~(dst : dst) ~(src : src) = 
+      match src, dst with
+    |`Addr _,`Addr _->
       let r15 = `Reg X86_64_Architecture.R15 in
       let src_to_r15 = movq src r15 in 
       let mov_to_dst = movq r15 dst in 
       insns [src_to_r15;mov_to_dst]
+    |_ ->
+      [Instruction (T.movq src dst)]
+      
 
     let bin ins ~dst ~srcl ~srcr =
       let r15 = `Reg X86_64_Architecture.R15 in
@@ -702,11 +707,19 @@ module FrameManager(IS : InstructionSelector) : FrameManager =
   end *)
 
     let call fd ~kind ~f ~args =
-      (* let reg_inst = *)
+
       let push_list = List.map ( fun src -> T.pushq ~src:src)  (List.rev args) in
       let push_inst = T.insns push_list in
-      let call_inst = [T.Instruction(T.calldi f)] in 
-        push_inst@call_inst
+        
+      match kind with 
+      |`Tail ->  (function_epilogue fd)@push_inst@[T.Instruction (T.jmpdi f)]
+      |`Normal -> 
+        
+        
+        
+        push_inst@[T.Instruction(T.calldi f)]
+      (* let reg_inst = *)
+      
   end
 
 module CG =
