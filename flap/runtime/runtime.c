@@ -22,19 +22,19 @@ void print_string(const char* s) {
 
 
 void print_int(int64_t n) {
-    printf("%" PRId64 "\n", n);
-    printf("fin prinf\n");
+    printf("%" PRId64, n);
+    // printf("fin prinf\n");
 }
 
-// void observe_int(int64_t n) {
-//   print_int(n);
+void observe_int(int64_t n) {
+  print_int(n);
+}
+
+// int64_t observe_int(int64_t n) {
+//   // print_int(n);
+//   // printf("%" PRId64 "\n", n);
+//   return n;
 // }
-
-int64_t observe_int(int64_t n) {
-  // print_int(n);
-  // printf("%" PRId64 "\n", n);
-  return n;
-}
 
 int64_t add_eight_int(int64_t n1,int64_t n2,int64_t n3,int64_t n4,int64_t n5,int64_t n6,int64_t n7,int64_t n8){
   return n1+n2+n3+n4+n5+n6+n7+n8;

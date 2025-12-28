@@ -500,8 +500,12 @@ module Codegen(IS : InstructionSelector)(FM : FrameManager) =
 module InstructionSelector : InstructionSelector =
   struct
     open T
-    (* val mov : dst:T.dst -> src:T.src -> T.line list *)
-    let mov ~(dst : dst) ~(src : src) = [Instruction (movq src dst)]
+   
+    let mov ~(dst : dst) ~(src : src) = 
+      let r15 = `Reg X86_64_Architecture.R15 in
+      let src_to_r15 = movq src r15 in 
+      let mov_to_dst = movq r15 dst in 
+      insns [src_to_r15;mov_to_dst]
 
     let bin ins ~dst ~srcl ~srcr =
       let r15 = `Reg X86_64_Architecture.R15 in
@@ -676,11 +680,14 @@ module FrameManager(IS : InstructionSelector) : FrameManager =
       let res = T.addr ~offset:off ~base:base () in
       res
 
-    let function_prologue fd =
-      T.insns [T.pushq ~src:rbp;T.movq ~src:rsp ~dst:rbp; T.subq ~src:(T.lit (Mint.of_int fd.locals_space) ) ~dst:rsp ]
+    let function_prologue fd =      
+      let save_registre = List.map (fun r -> T.pushr ~reg:r  ) X86_64_Architecture.callee_saved_registers  in
+      T.insns (save_registre@[T.movq ~src:rsp ~dst:rbp; T.subq ~src:(T.lit (Mint.of_int fd.locals_space) ) ~dst:rsp ])
 
     let function_epilogue fd =
-      T.insns [T.addq ~src:(T.lit (Mint.of_int fd.locals_space) ) ~dst:rsp ;T.popq ~dst:rbp ]
+      
+      let save_registre = List.map (fun r -> T.popr ~reg:r  ) ( List.rev X86_64_Architecture.callee_saved_registers)  in
+      T.insns ([T.addq ~src:(T.lit (Mint.of_int fd.locals_space) ) ~dst:rsp ]@save_registre)
 
     (** [call fd ~kind ~f ~args] generates the x86-64 assembly listing to setup
     a call to the function at [f], with arguments [args], with [kind]
