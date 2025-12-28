@@ -690,7 +690,6 @@ module FrameManager(IS : InstructionSelector) : FrameManager =
       T.insns (save_registre@[T.movq ~src:rsp ~dst:rbp; T.subq ~src:(T.lit (Mint.of_int fd.locals_space) ) ~dst:rsp ])
 
     let function_epilogue fd =
-      
       let save_registre = List.map (fun r -> T.popr ~reg:r  ) ( List.rev X86_64_Architecture.callee_saved_registers)  in
       T.insns ([T.addq ~src:(T.lit (Mint.of_int fd.locals_space) ) ~dst:rsp ]@save_registre)
 
@@ -710,14 +709,33 @@ module FrameManager(IS : InstructionSelector) : FrameManager =
 
       let push_list = List.map ( fun src -> T.pushq ~src:src)  (List.rev args) in
       let push_inst = T.insns push_list in
+
+      let saved_regs_size = (List.length X86_64_Architecture.callee_saved_registers) * 8 in
+      let current_locals_size = fd.locals_space in
+      let args_size = (List.length push_list) * 8 in 
+      let total_space_size = saved_regs_size + current_locals_size + args_size + 8   in 
+
+      
         
       match kind with 
       |`Tail ->  (function_epilogue fd)@push_inst@[T.Instruction (T.jmpdi f)]
       |`Normal -> 
         
+        let a = align total_space_size 16 in
+        let padding = a - total_space_size in 
+        let align_instruction = 
+        if padding <> 0 
+          then [T.Instruction (T.subq ~src:(T.lit (Mint.of_int padding)) ~dst:rsp)]
+        else [] 
+        in
+        let total_to_clean = args_size + padding in
+        let cleanup_inst =
+            if total_to_clean <> 0 then [T.Instruction (T.addq ~src:(T.lit (Mint.of_int total_to_clean)) ~dst:rsp)]
+            else []
+        in
+
+        align_instruction@push_inst@[T.Instruction(T.calldi f)]@cleanup_inst
         
-        
-        push_inst@[T.Instruction(T.calldi f)]
       (* let reg_inst = *)
       
   end
