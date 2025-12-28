@@ -612,10 +612,11 @@ module InstructionSelector : InstructionSelector =
       T.line list *)
 
     let switch ?default ~discriminant ~cases () =
-      (* let i = liti discriminant in *)
+      let cases_instruction_array = Array.map (fun  l -> (T.Instruction (jmpl l ) )) cases in 
+      let cases_instructions = Array.to_list cases_instruction_array in 
+      
 
       
-      failwith "switch"
 
   end
 
@@ -646,6 +647,7 @@ module FrameManager(IS : InstructionSelector) : FrameManager =
 
     let frame_descriptor ~params ~locals =
 
+      let saved_regs_size = (List.length X86_64_Architecture.callee_saved_registers) * 8 in
       let param_count = List.length params in 
       let locals_space = (List.length locals)*8 in 
       let stack_map = S.IdMap.empty in 
@@ -656,7 +658,7 @@ module FrameManager(IS : InstructionSelector) : FrameManager =
         S.IdMap.add id (Mint.of_int (-cpt)) pile
         ,cpt+8
         )
-        ) (stack_map,8) locals 
+        ) (stack_map,8+saved_regs_size) locals 
       in 
       let (final_stack,_) =
       List.fold_left (fun (pile,cpt) id -> 
@@ -687,11 +689,11 @@ module FrameManager(IS : InstructionSelector) : FrameManager =
 
     let function_prologue fd =      
       let save_registre = List.map (fun r -> T.pushr ~reg:r  ) X86_64_Architecture.callee_saved_registers  in
-      T.insns (save_registre@[T.movq ~src:rsp ~dst:rbp; T.subq ~src:(T.lit (Mint.of_int fd.locals_space) ) ~dst:rsp ])
+      T.insns ([T.pushr ~reg:X86_64_Architecture.RBP]@[T.movq ~src:rsp ~dst:rbp;]@save_registre@[T.subq ~src:(T.lit (Mint.of_int fd.locals_space) ) ~dst:rsp ])
 
     let function_epilogue fd =
       let save_registre = List.map (fun r -> T.popr ~reg:r  ) ( List.rev X86_64_Architecture.callee_saved_registers)  in
-      T.insns ([T.addq ~src:(T.lit (Mint.of_int fd.locals_space) ) ~dst:rsp ]@save_registre)
+      T.insns ([T.addq ~src:(T.lit (Mint.of_int fd.locals_space) ) ~dst:rsp ]@save_registre@[T.popr ~reg:X86_64_Architecture.RBP])
 
     (** [call fd ~kind ~f ~args] generates the x86-64 assembly listing to setup
     a call to the function at [f], with arguments [args], with [kind]

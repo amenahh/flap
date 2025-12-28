@@ -73,7 +73,6 @@ let callee_saved_registers : register list =
   [
     RBX;
     RSP;
-    RBP;
     R12;
     R13;
     R14;
