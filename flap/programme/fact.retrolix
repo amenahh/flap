@@ -1,0 +1,9 @@
+globals (res)
+    res <- copy 1 ;
+    res <- mul res, 2 ;
+    res <- mul res, 3 ;
+    res <- mul res, 4 ;
+    res <- mul res, 5 ;
+    %rdi <- copy res ;
+    observe_int() ;
+end

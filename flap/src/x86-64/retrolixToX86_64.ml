@@ -433,7 +433,7 @@ module Codegen(IS : InstructionSelector)(FM : FrameManager) =
              env
          in
          def @ body, env
-
+        (* Modif ici *)
       | S.DFunction ((S.FId id) as f, params, block) ->
          let def, env =
            translate_block
@@ -448,7 +448,7 @@ module Codegen(IS : InstructionSelector)(FM : FrameManager) =
       | S.DExternalFunction (S.FId id) ->
          T.(Directive (Extern id)) :: body,
          env
-
+    (* *** *)
     let generate_main _ p =
       let open T in
 
@@ -483,7 +483,7 @@ module Codegen(IS : InstructionSelector)(FM : FrameManager) =
           ]
         @ body
       in
-
+      (* *** *)
       Directive (Global "main") :: List.rev body
 
     (** [translate p env] turns a Retrolix program into a X86-64 program. *)
@@ -500,36 +500,144 @@ module Codegen(IS : InstructionSelector)(FM : FrameManager) =
 module InstructionSelector : InstructionSelector =
   struct
     open T
-
-    let mov ~(dst : dst) ~(src : src) =
-      failwith "Students! This is your job!"
+   
+    let mov ~(dst : dst) ~(src : src) = 
+      match src, dst with
+    |`Addr _,`Addr _->
+      let r15 = `Reg X86_64_Architecture.R15 in
+      let src_to_r15 = movq src r15 in 
+      let mov_to_dst = movq r15 dst in 
+      insns [src_to_r15;mov_to_dst]
+    |_ ->
+      [Instruction (T.movq src dst)]
+      
 
     let bin ins ~dst ~srcl ~srcr =
-      failwith "Students! This is your job!"
+      let r15 = `Reg X86_64_Architecture.R15 in
+      let mov_r15 = movq srcl r15 in
+      let _ins = ins srcr r15 in
+      let mov_dst = movq r15 dst in
+      insns [mov_r15;_ins;mov_dst]
 
     let add ~dst ~srcl ~srcr =
-      failwith "Students! This is your job!"
+      let r15 = `Reg X86_64_Architecture.R15 in
+      let mov_r15 = movq srcl r15 in
+      let add_ins = addq srcr r15 in
+      let mov_dst = movq r15 dst in
+      insns [mov_r15;add_ins;mov_dst]
 
-    let sub ~dst ~srcl ~srcr =
-      failwith "Students! This is your job!"
+     (** [sub ~dst ~srcl ~srcr] generates the x86-64 assembly listing to store
+        [srcl - srcr] into [dst].
+         val sub : dst:T.dst -> srcl:T.src -> srcr:T.src -> T.line list
+        *)
+    let sub ~dst ~srcl ~srcr = (* TODO r15 *)
+      let r15 = `Reg X86_64_Architecture.R15 in
+      let mov_r15 = movq srcl r15 in
+      let sub_ins = subq srcr r15 in
+      let mov_dst = movq r15 dst in
+      insns [mov_r15;sub_ins;mov_dst]
+      (* failwith "Students! This is your job!" *)
 
-    let mul ~dst ~srcl ~srcr =
-      failwith "Students! This is your job!"
+    (** [mul ~dst ~srcl ~srcr] generates the x86-64 assembly listing to store
+        [srcl * srcr] into [dst]. *)
+    (* val mul : dst:T.dst -> srcl:T.src -> srcr:T.src -> T.line list *)
+   
+    let mul ~dst ~srcl ~srcr = (* TODO *)
+      let r15 = `Reg X86_64_Architecture.R15 in
+      let mov_r15 = movq srcl r15 in
+      let imul_ins = imulq srcr r15 in
+      let mov_dst = movq r15 dst in
+      insns [mov_r15;imul_ins;mov_dst]
+      (* failwith "Students! This is your job!" *)
 
     let div ~dst ~srcl ~srcr =
-      failwith "Students! This is your job!"
+      let r15 = `Reg X86_64_Architecture.R15 in
+      let rax = `Reg X86_64_Architecture.RAX in
+      let mov_rax = movq srcl rax in
+      let extend = cqto in 
+      let mov_r15 = movq srcr r15 in 
+      let idiv_ins = idivq r15 in
+      let mov_dst = movq rax dst in
+      insns [mov_rax;extend;mov_r15;idiv_ins;mov_dst]
 
+       (** [andl ~dst ~srcl ~srcr] generates the x86-64 assembly listing to store
+        [srcl & srcr] into [dst]. *)
+        (* and[b|w|l|q] s,d         d = d&s (bitwise) *)
     let andl ~dst ~srcl ~srcr =
-      failwith "Students! This is your job!"
+      let r15 = `Reg X86_64_Architecture.R15 in
+      let mov_l = movq srcr r15 in
+      let and_ins = andq srcl r15 in
+      let mov_res = movq r15 dst in
+    insns [mov_l;and_ins;mov_res]
 
     let orl ~dst ~srcl ~srcr =
-      failwith "Students! This is your job!"
+      let r15 = `Reg X86_64_Architecture.R15 in
+      let mov_l = movq srcr r15 in
+      let or_ins = orq srcl r15 in
+      let mov_res = movq r15 dst in
+    insns [mov_l;or_ins;mov_res]
+
+      (** [conditional_jump ~cc ~srcl ~srcr ~ll ~lr] generates the x86-64 assembly
+      listing to test whether [srcl, srcr] satisfies the relation described by
+      [cc] and jump to [ll] if they do or to [lr] when they do not. *)
+    
+        (* val conditional_jump :
+      cc:T.condcode ->
+      srcl:T.src -> srcr:T.src ->
+      ll:T.label -> lr:T.label ->
+      T.line list *)
+
 
     let conditional_jump ~cc ~srcl ~srcr ~ll ~lr =
-      failwith "Students! This is your job!"
+      let r15 = `Reg X86_64_Architecture.R15 in
+      let mov_r15 = movq srcl r15 in 
+      let compare_ins = cmpq srcr r15 in
+      let jump_cc = jccl ~cc:cc ~tgt:ll in
+      let jump_l = jmpl lr in
+    insns [mov_r15;compare_ins;jump_cc;jump_l]
+      (* failwith "Students! This is your job!" *)
 
-    let switch ?default ~discriminant ~cases () =
-      failwith "Students! This is your job!"
+        (** [switch ~default ~discriminant ~cases ()] generates the x86-64 assembly
+       listing to jump to [cases.(discriminant)], or to the (optional) [default]
+       label when discriminant is larger than [Array.length cases].
+
+       The behavior of the program is undefined if [discriminant < 0], or if
+       [discriminant >= Array.length cases] and no [default] has been given. *)
+    
+       (* val switch :
+      ?default:T.label ->
+      discriminant:T.src ->
+      cases:T.label array ->
+      unit ->
+      T.line list *)
+
+let switch ?default ~discriminant ~cases () = 
+    let r15 = `Reg X86_64_Architecture.R15 in
+    let mov_r15 = [Instruction (movq discriminant r15)] in 
+    let size_array = Array.length cases in 
+
+      let cases_instructions_array = 
+        Array.mapi (fun  i case_label ->
+          [
+            Instruction (cmpq ~src1:(`Imm (Lit(Mint.of_int i))) ~src2:r15);
+            Instruction (jccl ~cc:E ~tgt:case_label)
+          ]
+        ) cases in 
+        let cases_instructions_list = Array.to_list cases_instructions_array in
+        let cases_instructions = List.flatten cases_instructions_list
+      in
+      
+      let default_instruction = 
+        match default with
+        | Some l -> 
+          [ 
+            Instruction (cmpq ~src1:(`Imm (Lit (Mint.of_int size_array))) ~src2:r15);
+            Instruction (jccl ~cc:AE ~tgt:l)
+            ]
+        | None -> [] 
+      in
+
+     mov_r15 @ default_instruction @ cases_instructions 
 
   end
 
@@ -559,23 +667,99 @@ module FrameManager(IS : InstructionSelector) : FrameManager =
       + fd.locals_space
 
     let frame_descriptor ~params ~locals =
-      (* Student! Implement me! *)
-      { param_count = 0; locals_space = 0; stack_map = S.IdMap.empty; }
 
+      let saved_regs_size = (List.length X86_64_Architecture.callee_saved_registers) * 8 in
+      let param_count = List.length params in 
+      let locals_space = (List.length locals)*8 in 
+      let stack_map = S.IdMap.empty in 
+   
+      let (stack,_) = 
+      List.fold_left (fun (pile,cpt) id -> 
+        (
+        S.IdMap.add id (Mint.of_int (-cpt)) pile
+        ,cpt+8
+        )
+        ) (stack_map,8+saved_regs_size) locals 
+      in 
+      let (final_stack,_) =
+      List.fold_left (fun (pile,cpt) id -> 
+        (
+        S.IdMap.add id (Mint.of_int (cpt)) pile
+        ,cpt+8
+        )
+        ) (stack,16) params
+
+      in {param_count=param_count;locals_space=locals_space;stack_map=final_stack;}
+    (* Implémentez la fonction location_of du module FrameManager, en supposant que la variable
+    passée en argument est toujours une variable globale (l’argument de type frame_descriptor
+    n’est donc pas utilisé pour l’instant). *)
+    
+    (** [location_of fd v] computes the address of [v] according to the frame
+        descriptor [fd]. Note that [v] might be a local variable, a function
+        parameter, or a global variable. *)
+    
+    (* val location_of : frame_descriptor -> S.identifier -> T.address *)
     let location_of fd id =
-      failwith "Students! This is your job!"
+      let base,off = 
+      match S.IdMap.find_opt id fd.stack_map with 
+      |Some x ->   X86_64_Architecture.RBP,T.Lit x
+      |None -> let S.Id (s) = id in X86_64_Architecture.RIP,T.Lab(s)
+      in 
+      let res = T.addr ~offset:off ~base:base () in
+      res
 
-    let function_prologue fd =
-      (* Student! Implement me! *)
-      []
+    let function_prologue fd =      
+      let save_registre = List.map (fun r -> T.pushr ~reg:r  ) X86_64_Architecture.callee_saved_registers  in
+      T.insns ([T.pushr ~reg:X86_64_Architecture.RBP]@[T.movq ~src:rsp ~dst:rbp;]@save_registre@[T.subq ~src:(T.lit (Mint.of_int fd.locals_space) ) ~dst:rsp ])
 
     let function_epilogue fd =
-      (* Student! Implement me! *)
-      []
+      let save_registre = List.map (fun r -> T.popr ~reg:r  ) ( List.rev X86_64_Architecture.callee_saved_registers)  in
+      T.insns ([T.addq ~src:(T.lit (Mint.of_int fd.locals_space) ) ~dst:rsp ]@save_registre@[T.popr ~reg:X86_64_Architecture.RBP])
+
+    (** [call fd ~kind ~f ~args] generates the x86-64 assembly listing to setup
+    a call to the function at [f], with arguments [args], with [kind]
+  specifying whether this should be a normal or tail call.  *)
+    
+        (* val call :
+      frame_descriptor ->
+      kind:[ `Normal | `Tail ] ->
+      f:T.src ->
+      args:T.src list ->
+      T.line list
+  end *)
 
     let call fd ~kind ~f ~args =
-      failwith "Students! This is your job!"
 
+      let push_list = List.map ( fun src -> T.pushq ~src:src)  (List.rev args) in
+      let push_inst = T.insns push_list in
+
+      let saved_regs_size = (List.length X86_64_Architecture.callee_saved_registers) * 8 in
+      let current_locals_size = fd.locals_space in
+      let args_size = (List.length push_list) * 8 in 
+      let total_space_size = saved_regs_size + current_locals_size + args_size + 8   in 
+      
+        
+      match kind with 
+      |`Tail ->  (function_epilogue fd)@push_inst@[T.Instruction (T.jmpdi f)]
+      |`Normal -> 
+        
+        let a = align total_space_size 16 in
+        let padding = a - total_space_size in 
+        let align_instruction = 
+        if padding <> 0 
+          then [T.Instruction (T.subq ~src:(T.lit (Mint.of_int padding)) ~dst:rsp)]
+        else [] 
+        in
+        let total_to_clean = args_size + padding in
+        let cleanup_inst =
+            if total_to_clean <> 0 then [T.Instruction (T.addq ~src:(T.lit (Mint.of_int total_to_clean)) ~dst:rsp)]
+            else []
+        in
+
+        align_instruction@push_inst@[T.Instruction(T.calldi f)]@cleanup_inst
+        
+      (* let reg_inst = *)
+      
   end
 
 module CG =

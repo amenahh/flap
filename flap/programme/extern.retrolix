@@ -1,0 +1,5 @@
+globals()
+    %rdi <- copy 42 ;
+    observe_int () ;
+    exit ;
+end
