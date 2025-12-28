@@ -31,7 +31,8 @@ void print_int(int64_t n) {
 // }
 
 int64_t observe_int(int64_t n) {
-  print_int(n);
+  // print_int(n);
+  // printf("%" PRId64 "\n", n);
   return n;
 }
 

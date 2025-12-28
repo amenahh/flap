@@ -432,8 +432,8 @@ module Codegen(IS : InstructionSelector)(FM : FrameManager) =
              block
              env
          in
-         def @ body, env
-
+         def @ body@ T.insns [T.Ret], env
+        (* Modif ici *)
       | S.DFunction ((S.FId id) as f, params, block) ->
          let def, env =
            translate_block
@@ -551,17 +551,58 @@ module InstructionSelector : InstructionSelector =
       let mov_dst = movq rax dst in
       insns [mov_rax;extend;mov_r15;idiv_ins;mov_dst]
 
+       (** [andl ~dst ~srcl ~srcr] generates the x86-64 assembly listing to store
+        [srcl & srcr] into [dst]. *)
+        (* and[b|w|l|q] s,d         d = d&s (bitwise) *)
     let andl ~dst ~srcl ~srcr =
-      failwith "Students! This is your job!"
+      let r15 = `Reg X86_64_Architecture.R15 in
+      let mov_l = movq srcr r15 in
+      let and_ins = andq srcl r15 in
+      let mov_res = movq r15 dst in
+    insns [mov_l;and_ins;mov_res]
 
     let orl ~dst ~srcl ~srcr =
-      failwith "Students! This is your job!"
+      let r15 = `Reg X86_64_Architecture.R15 in
+      let mov_l = movq srcr r15 in
+      let or_ins = orq srcl r15 in
+      let mov_res = movq r15 dst in
+    insns [mov_l;or_ins;mov_res]
+
+      (** [conditional_jump ~cc ~srcl ~srcr ~ll ~lr] generates the x86-64 assembly
+      listing to test whether [srcl, srcr] satisfies the relation described by
+      [cc] and jump to [ll] if they do or to [lr] when they do not. *)
+    
+        (* val conditional_jump :
+      cc:T.condcode ->
+      srcl:T.src -> srcr:T.src ->
+      ll:T.label -> lr:T.label ->
+      T.line list *)
+
 
     let conditional_jump ~cc ~srcl ~srcr ~ll ~lr =
-      failwith "Students! This is your job!"
+      let compare_ins = cmpq srcr srcl in
+      let jump_cc = jccl ~cc:cc ~tgt:ll in
+      let jump_l = jmpl lr in
+    insns [compare_ins;jump_cc;jump_l]
+      (* failwith "Students! This is your job!" *)
+
+        (** [switch ~default ~discriminant ~cases ()] generates the x86-64 assembly
+       listing to jump to [cases.(discriminant)], or to the (optional) [default]
+       label when discriminant is larger than [Array.length cases].
+
+       The behavior of the program is undefined if [discriminant < 0], or if
+       [discriminant >= Array.length cases] and no [default] has been given. *)
+    
+       (* val switch :
+      ?default:T.label ->
+      discriminant:T.src ->
+      cases:T.label array ->
+      unit ->
+      T.line list *)
 
     let switch ?default ~discriminant ~cases () =
-      failwith "Students! This is your job!"
+      (* let i = liti discriminant in *)
+      failwith "switch"
 
   end
 

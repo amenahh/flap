@@ -23,14 +23,15 @@ main:
 .p2align 3, 144
 .I_570419179:
 	/* Initializer for x, y, z, k. */
+	pushq %rbp
+	movq %rsp, %rbp
+	subq $0, %rsp
 	movq $6, x(%rip)
-
 	movq $7, y(%rip)
-	
 	movq y(%rip), %r15
 	imulq x(%rip), %r15
 	movq %r15, z(%rip)
-	
 	movq z(%rip), %r15
 	subq x(%rip), %r15
 	movq %r15, k(%rip)
+	ret
