@@ -736,7 +736,7 @@ module FrameManager(IS : InstructionSelector) : FrameManager =
       let saved_regs_size = (List.length X86_64_Architecture.callee_saved_registers) * 8 in
       let current_locals_size = fd.locals_space in
       let args_size = (List.length push_list) * 8 in 
-      let total_space_size = saved_regs_size + current_locals_size + args_size + 8   in 
+      let total_space_size = saved_regs_size + current_locals_size + args_size in 
       
         
       match kind with 
