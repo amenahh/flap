@@ -1,8 +1,0 @@
-open Cours04;;
-
-#install_printer Lang0.pp;;
-#install_printer Lang1.pp;;
-#install_printer Lang2.pp;;
-#install_printer Lang2.pp_value;;
-
-module R = Rewrite.Make(Lang1);;
